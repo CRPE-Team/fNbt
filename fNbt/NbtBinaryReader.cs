@@ -209,8 +209,7 @@ namespace fNbt {
             }
         }
 
-
-        [CanBeNull]
+        
         public TagSelector Selector { get; set; }
 
     }
