@@ -1,8 +1,7 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
-using JetBrains.Annotations;
 
 namespace fNbt {
     /// <summary> BinaryReader wrapper that takes care of reading primitives from an NBT stream,
@@ -10,14 +9,14 @@ namespace fNbt {
     public sealed class NbtBinaryReader : BinaryReader {
         readonly byte[] buffer = new byte[sizeof(double)];
 
-        byte[] seekBuffer;
-        const int SeekBufferSize = 8*1024;
+        byte[]? seekBuffer;
+        const int SeekBufferSize = 8 * 1024;
         readonly bool swapNeeded;
         readonly byte[] stringConversionBuffer = new byte[64];
 
 		public bool UseVarInt { get; set; }
 
-		public NbtBinaryReader([NotNull] Stream input, bool bigEndian)
+        public NbtBinaryReader(Stream input, bool bigEndian)
             : base(input) {
             swapNeeded = (BitConverter.IsLittleEndian == bigEndian);
         }
@@ -116,7 +115,8 @@ namespace fNbt {
             if (length < stringConversionBuffer.Length) {
                 int stringBytesRead = 0;
                 while (stringBytesRead < length) {
-                    int bytesReadThisTime = BaseStream.Read(stringConversionBuffer, stringBytesRead, length);
+                    int bytesToRead = length - stringBytesRead;
+                    int bytesReadThisTime = BaseStream.Read(stringConversionBuffer, stringBytesRead, bytesToRead);
                     if (bytesReadThisTime == 0) {
                         throw new EndOfStreamException();
                     }
@@ -135,7 +135,7 @@ namespace fNbt {
 
         public void Skip(int bytesToSkip) {
             if (bytesToSkip < 0) {
-                throw new ArgumentOutOfRangeException("bytesToSkip");
+                throw new ArgumentOutOfRangeException(nameof(bytesToSkip));
             } else if (BaseStream.CanSeek) {
                 BaseStream.Position += bytesToSkip;
             } else if (bytesToSkip != 0) {

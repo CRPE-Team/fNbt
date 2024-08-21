@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Text;
-using JetBrains.Annotations;
 
 namespace fNbt {
     /// <summary> BinaryWriter wrapper that writes NBT primitives to a stream,
@@ -32,7 +31,7 @@ namespace fNbt {
         const int BufferSize = 256;
 
         // UTF8 characters use at most 4 bytes each.
-        const int MaxBufferedStringLength = BufferSize/4;
+        const int MaxBufferedStringLength = BufferSize / 4;
 
         // Each NbtBinaryWriter needs to have its own instance of the buffer.
         readonly byte[] buffer = new byte[BufferSize];
@@ -41,9 +40,9 @@ namespace fNbt {
         readonly bool swapNeeded;
 
 
-        public NbtBinaryWriter([NotNull] Stream input, bool bigEndian) {
-            if (input == null) throw new ArgumentNullException("input");
-            if (!input.CanWrite) throw new ArgumentException("Given stream must be writable", "input");
+        public NbtBinaryWriter(Stream input, bool bigEndian) {
+            if (input == null) throw new ArgumentNullException(nameof(input));
+            if (!input.CanWrite) throw new ArgumentException("Given stream must be writable", nameof(input));
             stream = input;
             swapNeeded = (BitConverter.IsLittleEndian == bigEndian);
         }
@@ -195,10 +194,10 @@ namespace fNbt {
 		    VarInt.WriteUInt32(BaseStream, (uint)value);
 	    }
 
-		// Based on BinaryWriter.Write(String)
-		public void Write([NotNull] string value) {
+        // Based on BinaryWriter.Write(String)
+        public void Write(string value) {
             if (value == null) {
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
             }
 
             // Write out string length (as number of bytes)

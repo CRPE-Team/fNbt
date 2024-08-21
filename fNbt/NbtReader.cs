@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Text;
-using JetBrains.Annotations;
 
 namespace fNbt {
     /// <summary> Represents a reader that provides fast, non-cached, forward-only access to NBT data.
@@ -10,10 +10,10 @@ namespace fNbt {
     public class NbtReader {
         NbtParseState state = NbtParseState.AtStreamBeginning;
         readonly NbtBinaryReader reader;
-        Stack<NbtReaderNode> nodes;
+        Stack<NbtReaderNode>? nodes;
         readonly long streamStartOffset;
         bool atValue;
-        object valueCache;
+        object? valueCache;
         readonly bool canSeekStream;
 
 
@@ -22,8 +22,8 @@ namespace fNbt {
         /// <remarks> Assumes that data in the stream is Big-Endian encoded. </remarks>
         /// <exception cref="ArgumentNullException"> <paramref name="stream"/> is <c>null</c>. </exception>
         /// <exception cref="ArgumentException"> <paramref name="stream"/> is not readable. </exception>
-        public NbtReader([NotNull] Stream stream)
-            : this(stream, true) {}
+        public NbtReader(Stream stream)
+            : this(stream, true) { }
 
 
         /// <summary> Initializes a new instance of the NbtReader class. </summary>
@@ -31,8 +31,8 @@ namespace fNbt {
         /// <param name="bigEndian"> Whether NBT data is in Big-Endian encoding. </param>
         /// <exception cref="ArgumentNullException"> <paramref name="stream"/> is <c>null</c>. </exception>
         /// <exception cref="ArgumentException"> <paramref name="stream"/> is not readable. </exception>
-        public NbtReader([NotNull] Stream stream, bool bigEndian) {
-            if (stream == null) throw new ArgumentNullException("stream");
+        public NbtReader(Stream stream, bool bigEndian) {
+            if (stream == null) throw new ArgumentNullException(nameof(stream));
             SkipEndTags = true;
             CacheTagValues = false;
             ParentTagType = NbtTagType.Unknown;
@@ -48,16 +48,13 @@ namespace fNbt {
 
 
         /// <summary> Gets the name of the root tag of this NBT stream. </summary>
-        [CanBeNull]
-        public string RootName { get; private set; }
+        public string? RootName { get; private set; }
 
         /// <summary> Gets the name of the parent tag. May be null (for root tags and descendants of list elements). </summary>
-        [CanBeNull]
-        public string ParentName { get; private set; }
+        public string? ParentName { get; private set; }
 
         /// <summary> Gets the name of the current tag. May be null (for list elements and end tags). </summary>
-        [CanBeNull]
-        public string TagName { get; private set; }
+        public string? TagName { get; private set; }
 
         /// <summary> Gets the type of the parent tag. Returns TagType.Unknown if there is no parent tag. </summary>
         public NbtTagType ParentTagType { get; private set; }
@@ -113,6 +110,7 @@ namespace fNbt {
                     case NbtTagType.List:
                     case NbtTagType.ByteArray:
                     case NbtTagType.IntArray:
+                    case NbtTagType.LongArray:
                         return true;
                     default:
                         return false;
@@ -121,7 +119,6 @@ namespace fNbt {
         }
 
         /// <summary> Gets the Stream from which data is being read. </summary>
-        [NotNull]
         public Stream BaseStream {
             get { return reader.BaseStream; }
         }
@@ -169,7 +166,6 @@ namespace fNbt {
                     state = NbtParseState.Error;
                     // read first tag, make sure it's a compound
                     if (reader.ReadTagType() != NbtTagType.Compound) {
-                        state = NbtParseState.Error;
                         throw new NbtFormatException("Given NBT stream does not start with a TAG_Compound");
                     }
                     Depth = 1;
@@ -185,6 +181,7 @@ namespace fNbt {
                     goto case NbtParseState.InCompound;
 
                 case NbtParseState.InCompound:
+                    state = NbtParseState.Error;
                     if (atValue) {
                         SkipValue();
                     }
@@ -193,11 +190,9 @@ namespace fNbt {
                         TagStartOffset = (int)(reader.BaseStream.Position - streamStartOffset);
                     }
 
-                    NbtParseState oldState = state;
                     // set state to error in case reader.ReadTagType throws.
-                    state = NbtParseState.Error;
                     TagType = reader.ReadTagType();
-                    state = oldState;
+                    state = NbtParseState.InCompound;
 
                     if (TagType == NbtTagType.End) {
                         TagName = null;
@@ -222,6 +217,7 @@ namespace fNbt {
                     goto case NbtParseState.InList;
 
                 case NbtParseState.InList:
+                    state = NbtParseState.Error;
                     if (atValue) {
                         SkipValue();
                     }
@@ -237,13 +233,13 @@ namespace fNbt {
                             goto case NbtParseState.InCompound;
                         } else {
                             // This should not happen unless NbtReader is bugged
-                            state = NbtParseState.Error;
                             throw new NbtFormatException(InvalidParentTagError);
                         }
                     } else {
                         if (canSeekStream) {
                             TagStartOffset = (int)(reader.BaseStream.Position - streamStartOffset);
                         }
+                        state = NbtParseState.InList;
                         ReadTagHeader(false);
                     }
                     return true;
@@ -278,6 +274,9 @@ namespace fNbt {
 
 
         void ReadTagHeader(bool readName) {
+            // Setting state to error in case reader throws
+            NbtParseState oldState = state;
+            state = NbtParseState.Error;
             TagsRead++;
             TagName = (readName ? reader.ReadString() : null);
 
@@ -295,17 +294,21 @@ namespace fNbt {
                 case NbtTagType.Double:
                 case NbtTagType.String:
                     atValue = true;
+                    state = oldState;
                     break;
 
                 case NbtTagType.IntArray:
                 case NbtTagType.ByteArray:
+                case NbtTagType.LongArray:
                     TagLength = reader.ReadInt32();
+                    if (TagLength < 0) {
+                        throw new NbtFormatException("Negative array length given: " + TagLength);
+                    }
                     atValue = true;
+                    state = oldState;
                     break;
 
                 case NbtTagType.List:
-                    // Setting state to error in case reader throws
-                    state = NbtParseState.Error;
                     ListType = reader.ReadTagType();
                     TagLength = reader.ReadInt32();
                     if (TagLength < 0) {
@@ -319,7 +322,7 @@ namespace fNbt {
                     break;
 
                 default:
-                    state = NbtParseState.Error;
+                    // This should not happen unless NbtBinaryReader is bugged
                     throw new NbtFormatException("Trying to read tag of unknown type.");
             }
         }
@@ -349,6 +352,7 @@ namespace fNbt {
 
         // Goes one step up the NBT file's hierarchy, restoring previous state
         void GoUp() {
+            NullableSupport.Assert(nodes != null);
             NbtReaderNode oldNode = nodes.Pop();
 
             ParentName = oldNode.ParentName;
@@ -388,7 +392,11 @@ namespace fNbt {
                     break;
 
                 case NbtTagType.IntArray:
-                    reader.Skip(sizeof(int)*TagLength);
+                    reader.Skip(sizeof(int) * TagLength);
+                    break;
+
+                case NbtTagType.LongArray:
+                    reader.Skip(sizeof(long) * TagLength);
                     break;
 
                 case NbtTagType.String:
@@ -409,7 +417,7 @@ namespace fNbt {
         /// <returns> <c>true</c> if a matching tag is found; otherwise <c>false</c>. </returns>
         /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
         /// <exception cref="InvalidOperationException"> If NbtReader cannot recover from a previous parsing error. </exception>
-        public bool ReadToFollowing([CanBeNull] string tagName) {
+        public bool ReadToFollowing(string? tagName) {
             while (ReadToFollowing()) {
                 if (TagName == tagName) {
                     return true;
@@ -425,7 +433,7 @@ namespace fNbt {
         /// <returns> <c>true</c> if a matching descendant tag is found; otherwise <c>false</c>. </returns>
         /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
         /// <exception cref="InvalidReaderStateException"> If NbtReader cannot recover from a previous parsing error. </exception>
-        public bool ReadToDescendant([CanBeNull] string tagName) {
+        public bool ReadToDescendant(string? tagName) {
             if (state == NbtParseState.Error) {
                 throw new InvalidReaderStateException(ErroneousStateError);
             } else if (state == NbtParseState.AtStreamEnd) {
@@ -472,7 +480,7 @@ namespace fNbt {
         /// <returns> <c>true</c> if a matching sibling element is found; otherwise <c>false</c>. </returns>
         /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
         /// <exception cref="InvalidOperationException"> If NbtReader cannot recover from a previous parsing error. </exception>
-        public bool ReadToNextSibling([CanBeNull] string tagName) {
+        public bool ReadToNextSibling(string? tagName) {
             while (ReadToNextSibling()) {
                 if (TagName == tagName) {
                     return true;
@@ -511,7 +519,6 @@ namespace fNbt {
         /// <exception cref="InvalidReaderStateException"> If NbtReader cannot recover from a previous parsing error. </exception>
         /// <exception cref="EndOfStreamException"> End of stream has been reached (no more tags can be read). </exception>
         /// <exception cref="InvalidOperationException"> Tag value has already been read, and CacheTagValues is false. </exception>
-        [NotNull]
         public NbtTag ReadAsTag() {
             switch (state) {
                 case NbtParseState.Error:
@@ -575,23 +582,18 @@ namespace fNbt {
         }
 
 
-        void AddToParent([NotNull] NbtTag thisTag, [NotNull] NbtTag parent) {
-            var parentAsList = parent as NbtList;
-            if (parentAsList != null) {
+        static void AddToParent(NbtTag thisTag, NbtTag parent) {
+            if (parent is NbtList parentAsList) {
                 parentAsList.Add(thisTag);
+            } else if (parent is NbtCompound parentAsCompound) {
+                parentAsCompound.Add(thisTag);
             } else {
-                var parentAsCompound = parent as NbtCompound;
-                if (parentAsCompound != null) {
-                    parentAsCompound.Add(thisTag);
-                } else {
-                    // cannot happen unless NbtReader is bugged
-                    throw new NbtFormatException(InvalidParentTagError);
-                }
+                // cannot happen unless NbtReader is bugged
+                throw new NbtFormatException(InvalidParentTagError);
             }
         }
 
 
-        [NotNull]
         NbtTag ReadValueAsTag() {
             if (!atValue) {
                 // Should never happen
@@ -634,6 +636,14 @@ namespace fNbt {
                     }
                     return new NbtIntArray(TagName, ints);
 
+                case NbtTagType.LongArray:
+                    var longs = new long[TagLength];
+                    for (int i = 0; i < TagLength; i++) {
+                        longs[i] = reader.ReadInt64();
+                    }
+
+                    return new NbtLongArray(TagName, longs);
+
                 default:
                     throw new InvalidOperationException(NonValueTagError);
             }
@@ -661,7 +671,6 @@ namespace fNbt {
         /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
         /// <exception cref="InvalidOperationException"> Value has already been read, or there is no value to read. </exception>
         /// <exception cref="InvalidReaderStateException"> If NbtReader cannot recover from a previous parsing error. </exception>
-        [NotNull]
         public object ReadValue() {
             if (state == NbtParseState.AtStreamEnd) {
                 throw new EndOfStreamException();
@@ -721,6 +730,15 @@ namespace fNbt {
                     value = intValue;
                     break;
 
+                case NbtTagType.LongArray:
+                    var longValue = new long[TagLength];
+                    for (int i = 0; i < TagLength; i++) {
+                        longValue[i] = reader.ReadInt64();
+                    }
+
+                    value = longValue;
+                    break;
+
                 case NbtTagType.String:
                     value = reader.ReadString();
                     break;
@@ -744,7 +762,6 @@ namespace fNbt {
         /// <exception cref="InvalidOperationException"> Current tag is not of type List. </exception>
         /// <exception cref="InvalidReaderStateException"> If NbtReader cannot recover from a previous parsing error. </exception>
         /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
-        [NotNull]
         public T[] ReadListAsArray<T>() {
             switch (state) {
                 case NbtParseState.AtStreamEnd:
@@ -781,43 +798,43 @@ namespace fNbt {
             switch (ListType) {
                 case NbtTagType.Byte:
                     for (int i = 0; i < elementsToRead; i++) {
-                        result[i] = (T)Convert.ChangeType(reader.ReadByte(), typeof(T));
+                        result[i] = (T)Convert.ChangeType(reader.ReadByte(), typeof(T), CultureInfo.InvariantCulture);
                     }
                     break;
 
                 case NbtTagType.Short:
                     for (int i = 0; i < elementsToRead; i++) {
-                        result[i] = (T)Convert.ChangeType(reader.ReadInt16(), typeof(T));
+                        result[i] = (T)Convert.ChangeType(reader.ReadInt16(), typeof(T), CultureInfo.InvariantCulture);
                     }
                     break;
 
                 case NbtTagType.Int:
                     for (int i = 0; i < elementsToRead; i++) {
-                        result[i] = (T)Convert.ChangeType(reader.ReadInt32(), typeof(T));
+                        result[i] = (T)Convert.ChangeType(reader.ReadInt32(), typeof(T), CultureInfo.InvariantCulture);
                     }
                     break;
 
                 case NbtTagType.Long:
                     for (int i = 0; i < elementsToRead; i++) {
-                        result[i] = (T)Convert.ChangeType(reader.ReadInt64(), typeof(T));
+                        result[i] = (T)Convert.ChangeType(reader.ReadInt64(), typeof(T), CultureInfo.InvariantCulture);
                     }
                     break;
 
                 case NbtTagType.Float:
                     for (int i = 0; i < elementsToRead; i++) {
-                        result[i] = (T)Convert.ChangeType(reader.ReadSingle(), typeof(T));
+                        result[i] = (T)Convert.ChangeType(reader.ReadSingle(), typeof(T), CultureInfo.InvariantCulture);
                     }
                     break;
 
                 case NbtTagType.Double:
                     for (int i = 0; i < elementsToRead; i++) {
-                        result[i] = (T)Convert.ChangeType(reader.ReadDouble(), typeof(T));
+                        result[i] = (T)Convert.ChangeType(reader.ReadDouble(), typeof(T), CultureInfo.InvariantCulture);
                     }
                     break;
 
                 case NbtTagType.String:
                     for (int i = 0; i < elementsToRead; i++) {
-                        result[i] = (T)Convert.ChangeType(reader.ReadString(), typeof(T));
+                        result[i] = (T)Convert.ChangeType(reader.ReadString(), typeof(T), CultureInfo.InvariantCulture);
                     }
                     break;
 
@@ -862,7 +879,6 @@ namespace fNbt {
         /// Indents the tag according default indentation (NbtTag.DefaultIndentString). </summary>
         /// <param name="includeValue"> If set to <c>true</c>, also reads and prints the current tag's value. 
         /// Note that unless CacheTagValues is set to <c>true</c>, you can only read every tag's value ONCE. </param>
-        [NotNull]
         public string ToString(bool includeValue) {
             return ToString(includeValue, NbtTag.DefaultIndentString);
         }
@@ -872,9 +888,8 @@ namespace fNbt {
         /// Prints current tag's depth, ordinal number, type, name, size (for arrays and lists), and optionally value. </summary>
         /// <param name="indentString"> String to be used for indentation. May be empty string, but may not be <c>null</c>. </param>
         /// <param name="includeValue"> If set to <c>true</c>, also reads and prints the current tag's value. </param>
-        [NotNull]
-        public string ToString(bool includeValue, [NotNull] string indentString) {
-            if (indentString == null) throw new ArgumentNullException("indentString");
+        public string ToString(bool includeValue, string indentString) {
+            if (indentString == null) throw new ArgumentNullException(nameof(indentString));
             var sb = new StringBuilder();
             for (int i = 0; i < Depth; i++) {
                 sb.Append(indentString);
@@ -888,14 +903,14 @@ namespace fNbt {
             }
             sb.Append(' ').Append(TagName);
             if (includeValue && (atValue || HasValue && cacheTagValues) && TagType != NbtTagType.IntArray &&
-                TagType != NbtTagType.ByteArray) {
+                TagType != NbtTagType.ByteArray && TagType != NbtTagType.LongArray) {
                 sb.Append(" = ").Append(ReadValue());
             }
             return sb.ToString();
         }
 
 
-        const string NoValueToReadError = "Value aready read, or no value to read.",
+        const string NoValueToReadError = "Value already read, or no value to read.",
             NonValueTagError = "Trying to read value of a non-value tag.",
             InvalidParentTagError = "Parent tag is neither a Compound nor a List.",
             ErroneousStateError = "NbtReader is in an erroneous state!";

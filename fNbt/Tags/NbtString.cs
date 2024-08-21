@@ -1,6 +1,6 @@
 ﻿using System;
+using System.Globalization;
 using System.Text;
-using JetBrains.Annotations;
 
 namespace fNbt {
     /// <summary> A tag containing a single string. String is stored in UTF-8 encoding. </summary>
@@ -11,38 +11,36 @@ namespace fNbt {
         }
 
         /// <summary> Value/payload of this tag (a single string). May not be <c>null</c>. </summary>
-        [NotNull]
         public string Value {
             get { return stringVal; }
             set {
                 if (value == null) {
-                    throw new ArgumentNullException("value");
+                    throw new ArgumentNullException(nameof(value));
                 }
                 stringVal = value;
             }
         }
 
-        [NotNull]
         string stringVal = "";
 
 
         /// <summary> Creates an unnamed NbtString tag with the default value (empty string). </summary>
-        public NbtString() {}
+        public NbtString() { }
 
 
         /// <summary> Creates an unnamed NbtString tag with the given value. </summary>
         /// <param name="value"> String value to assign to this tag. May not be <c>null</c>. </param>
         /// <exception cref="ArgumentNullException"> <paramref name="value"/> is <c>null</c>. </exception>
-        public NbtString([NotNull] string value)
-            : this(null, value) {}
+        public NbtString(string value)
+            : this(null, value) { }
 
 
         /// <summary> Creates an NbtString tag with the given name and value. </summary>
         /// <param name="tagName"> Name to assign to this tag. May be <c>null</c>. </param>
         /// <param name="value"> String value to assign to this tag. May not be <c>null</c>. </param>
         /// <exception cref="ArgumentNullException"> <paramref name="value"/> is <c>null</c>. </exception>
-        public NbtString([CanBeNull] string tagName, [NotNull] string value) {
-            if (value == null) throw new ArgumentNullException("value");
+        public NbtString(string? tagName, string value) {
+            if (value == null) throw new ArgumentNullException(nameof(value));
             name = tagName;
             Value = value;
         }
@@ -51,8 +49,8 @@ namespace fNbt {
         /// <summary> Creates a copy of given NbtString tag. </summary>
         /// <param name="other"> Tag to copy. May not be <c>null</c>. </param>
         /// <exception cref="ArgumentNullException"> <paramref name="other"/> is <c>null</c>. </exception>
-        public NbtString([NotNull] NbtString other) {
-            if (other == null) throw new ArgumentNullException("other");
+        public NbtString(NbtString other) {
+            if (other == null) throw new ArgumentNullException(nameof(other));
             name = other.name;
             Value = other.Value;
         }
@@ -90,6 +88,7 @@ namespace fNbt {
         #endregion
 
 
+        /// <inheritdoc />
         public override object Clone() {
             return new NbtString(this);
         }
@@ -101,7 +100,7 @@ namespace fNbt {
             }
             sb.Append("TAG_String");
             if (!String.IsNullOrEmpty(Name)) {
-                sb.AppendFormat("(\"{0}\")", Name);
+                sb.AppendFormat(CultureInfo.InvariantCulture, "(\"{0}\")", Name);
             }
             sb.Append(": \"");
             sb.Append(Value);

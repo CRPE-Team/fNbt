@@ -6,28 +6,28 @@ namespace fNbt.Test {
         [Test]
         public void SkippingTagsOnFileLoad() {
             var loadedFile = new NbtFile();
-            loadedFile.LoadFromFile("TestFiles/bigtest.nbt",
+            loadedFile.LoadFromFile(TestFiles.Big,
                                     NbtCompression.None,
                                     tag => tag.Name != "nested compound test");
             NbtCompound rootTag = (NbtCompound)loadedFile.RootTag;
             Assert.IsFalse(rootTag.Contains("nested compound test"));
             Assert.IsTrue(rootTag.Contains("listTest (long)"));
 
-            loadedFile.LoadFromFile("TestFiles/bigtest.nbt",
+            loadedFile.LoadFromFile(TestFiles.Big,
                                     NbtCompression.None,
                                     tag => tag.TagType != NbtTagType.Float || tag.Parent.Name != "Level");
             rootTag = (NbtCompound)loadedFile.RootTag;
             Assert.IsFalse(rootTag.Contains("floatTest"));
             Assert.AreEqual(0.75f, rootTag["nested compound test"]["ham"]["value"].FloatValue);
 
-            loadedFile.LoadFromFile("TestFiles/bigtest.nbt",
+            loadedFile.LoadFromFile(TestFiles.Big,
                                     NbtCompression.None,
                                     tag => tag.Name != "listTest (long)");
             rootTag = (NbtCompound)loadedFile.RootTag;
             Assert.IsFalse(rootTag.Contains("listTest (long)"));
             Assert.IsTrue(rootTag.Contains("byteTest"));
 
-            loadedFile.LoadFromFile("TestFiles/bigtest.nbt",
+            loadedFile.LoadFromFile(TestFiles.Big,
                                     NbtCompression.None,
                                     tag => false);
             rootTag = (NbtCompound)loadedFile.RootTag;
