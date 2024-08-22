@@ -473,9 +473,8 @@ namespace fNbt.Test {
                 // Let's read what we have written, and check contents
                 NbtFile file = new NbtFile();
                 file.LoadFromStream(ms, NbtCompression.None);
-                NbtCompound rootTag = (NbtCompound)file.RootTag;
                 var readStrings =
-                    rootTag.Get<NbtList>("stringList")
+                    file.RootTag.Get<NbtList>("stringList")
                         .ToArray<NbtString>()
                         .Select(tag => tag.StringValue);
 

@@ -18,7 +18,8 @@ namespace fNbt {
         /// May be <c>null</c>, if this <c>NbtFile</c> instance has not been loaded from, or saved to, a file. </summary>
         public string? FileName { get; private set; }
 
-		public bool UseVarInt { get; set; }
+        [Obsolete]
+        public bool UseVarInt { get; set; }
 
         /// <summary> Gets the compression method used for most recent loading/saving of this file.
         /// Defaults to AutoDetect. </summary>
@@ -69,7 +70,8 @@ namespace fNbt {
         NbtTagCollection? rootTag; // lazily-initialized by the getter
 
         /// <summary> Whether this file should read/write tags in big-endian encoding format. </summary>
-        public bool BigEndian => Flavor.BigEndian;
+        [Obsolete]
+        public bool BigEndian { get => Flavor.BigEndian; set => Flavor.BigEndian = value; }
 
         /// <summary> Gets or sets the NbtFlavor to use for this NbtFile. By default, all new files use <see cref="NbtFlavor.Default"/> unless otherwise specified. </summary>
         public NbtFlavor Flavor { get; set; } = NbtFlavor.Default;
@@ -528,7 +530,7 @@ namespace fNbt {
                     int checksum;
                     using (var compressStream = new ZLibStream(stream, CompressionMode.Compress, true)) {
                         var bufferedStream = new BufferedStream(compressStream, WriteBufferSize);
-                        RootTag.WriteTag(new NbtBinaryWriter(bufferedStream, BigEndian) {UseVarInt = UseVarInt});
+                        RootTag.WriteTag(new NbtBinaryWriter(bufferedStream, BigEndian) { UseVarInt = UseVarInt });
                         bufferedStream.Flush();
                         checksum = compressStream.Checksum;
                     }

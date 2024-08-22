@@ -20,7 +20,7 @@
         }
 
         /// <summary> Whether numbers are encoded in BigEndian (Java) or LittleEndian (Bedrock) byte order. Default is true. </summary>
-        public bool BigEndian { get; private set; }
+        public bool BigEndian { get; set; }
 
         /// <summary> Whether lists are allowed to be root tags. </summary>
         public bool AllowListRootTag { get; private set; }
@@ -84,6 +84,6 @@
         /// <summary>
         /// The default options for reading and writing NBT files and network streams, set to <see cref="JavaWorldOfColor"/>.
         /// </summary>
-        public static NbtFlavor Default { get; set; } = new();
+        public static NbtFlavor Default { get; set; } = JavaWorldOfColor;
     }
 }

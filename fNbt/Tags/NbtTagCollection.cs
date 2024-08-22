@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace fNbt {
     public abstract class NbtTagCollection : NbtTag, ICollection<NbtTag>, ICollection {
@@ -23,7 +24,16 @@ namespace fNbt {
         }
 
         void ICollection.CopyTo(Array array, int index) {
-            CopyTo((NbtTag[])array, index);
+            if (array is NbtTag[] nbtTags) {
+                CopyTo(nbtTags, index);
+
+                return;
+            }
+
+            var values = this.ToArray();
+            for (int i = 0; i < Count; i++) {
+                array.SetValue(values[index + i], i);
+            }
         }
 
         bool ICollection.IsSynchronized {

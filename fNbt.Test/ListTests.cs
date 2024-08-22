@@ -289,8 +289,7 @@ namespace fNbt.Test {
                 writtenList.Add(new NbtInt(i));
             }
 
-            NbtCompound rootTag = (NbtCompound)writtenFile.RootTag;
-            rootTag.Add(writtenList);
+            writtenFile.RootTag.Add(writtenList);
 
             // test saving
             byte[] data = writtenFile.SaveToBuffer(NbtCompression.None);
@@ -375,16 +374,15 @@ namespace fNbt.Test {
                 var file = new NbtFile();
                 long bytesRead = file.LoadFromBuffer(data, 0, data.Length, NbtCompression.None);
                 Assert.AreEqual(bytesRead, data.Length);
-                NbtCompound rootTag = (NbtCompound)file.RootTag;
-                Assert.AreEqual(1, rootTag.Get<NbtList>("OuterList").Count);
-                Assert.AreEqual(null, rootTag.Get<NbtList>("OuterList").Get<NbtCompound>(0).Name);
+                Assert.AreEqual(1, file.RootTag.Get<NbtList>("OuterList").Count);
+                Assert.AreEqual(null, file.RootTag.Get<NbtList>("OuterList").Get<NbtCompound>(0).Name);
                 Assert.AreEqual(1,
-                                rootTag.Get<NbtList>("OuterList")
+                                file.RootTag.Get<NbtList>("OuterList")
                                     .Get<NbtCompound>(0)
                                     .Get<NbtList>("InnerList")
                                     .Count);
                 Assert.AreEqual(null,
-                                rootTag.Get<NbtList>("OuterList")
+                                file.RootTag.Get<NbtList>("OuterList")
                                     .Get<NbtCompound>(0)
                                     .Get<NbtList>("InnerList")
                                     .Get<NbtCompound>(0)

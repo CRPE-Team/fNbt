@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Globalization;
-using System.IO;
 using System.Text;
 
 namespace fNbt {
@@ -247,7 +246,7 @@ namespace fNbt {
                     throw new InvalidCastException("Cannot get IntArrayValue from " + GetCanonicalTagName(TagType));
                 }
             }
-		}
+        }
 
         /// <summary> Returns the value of this tag, cast as a long array.
         /// Only supported by NbtLongArray tags. </summary>
