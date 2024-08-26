@@ -1,7 +1,9 @@
 ﻿using System;
 using System.IO;
 using System.IO.Compression;
+using System.Runtime.CompilerServices;
 
+[assembly: InternalsVisibleTo("fNbt.Serialization")]
 namespace fNbt {
     /// <summary> Represents a complete NBT file. </summary>
     public sealed class NbtFile {
@@ -19,7 +21,7 @@ namespace fNbt {
         public string? FileName { get; private set; }
 
         [Obsolete]
-        public bool UseVarInt { get; set; }
+        public bool UseVarInt { get => Flavor.UseVarInt; set => Flavor.UseVarInt = value; }
 
         /// <summary> Gets the compression method used for most recent loading/saving of this file.
         /// Defaults to AutoDetect. </summary>
@@ -403,9 +405,8 @@ namespace fNbt {
                 if (firstByte != (int)NbtTagType.List)
                     throw new NbtFormatException("Given NBT stream does not start with either TAG_Compound or TAG_List");
             }
-            var reader = new NbtBinaryReader(stream, BigEndian) {
-                Selector = tagSelector,
-                UseVarInt = UseVarInt
+            var reader = new NbtBinaryReader(stream, Flavor) {
+                Selector = tagSelector
             };
 
             var rootCompound = new NbtCompound(reader.ReadString());
@@ -530,7 +531,7 @@ namespace fNbt {
                     int checksum;
                     using (var compressStream = new ZLibStream(stream, CompressionMode.Compress, true)) {
                         var bufferedStream = new BufferedStream(compressStream, WriteBufferSize);
-                        RootTag.WriteTag(new NbtBinaryWriter(bufferedStream, BigEndian) { UseVarInt = UseVarInt });
+                        RootTag.WriteTag(new NbtBinaryWriter(bufferedStream, Flavor));
                         bufferedStream.Flush();
                         checksum = compressStream.Checksum;
                     }
@@ -546,13 +547,13 @@ namespace fNbt {
                     using (var compressStream = new GZipStream(stream, CompressionMode.Compress, true)) {
                         // use a buffered stream to avoid GZipping in small increments (which has a lot of overhead)
                         var bufferedStream = new BufferedStream(compressStream, WriteBufferSize);
-                        RootTag.WriteTag(new NbtBinaryWriter(bufferedStream, BigEndian) { UseVarInt = UseVarInt });
+                        RootTag.WriteTag(new NbtBinaryWriter(bufferedStream, Flavor));
                         bufferedStream.Flush();
                     }
                     break;
 
                 case NbtCompression.None:
-                    var writer = new NbtBinaryWriter(stream, BigEndian) { UseVarInt = UseVarInt };
+                    var writer = new NbtBinaryWriter(stream, Flavor);
                     RootTag.WriteTag(writer);
                     break;
 
@@ -579,7 +580,7 @@ namespace fNbt {
         /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
         /// <exception cref="IOException"> If an I/O error occurred while reading the file. </exception>
         public static string ReadRootTagName(string fileName) {
-            return ReadRootTagName(fileName, NbtCompression.AutoDetect, NbtFlavor.Default.BigEndian, defaultBufferSize);
+            return ReadRootTagName(fileName, NbtCompression.AutoDetect, NbtFlavor.Default, defaultBufferSize);
         }
 
 
@@ -596,7 +597,7 @@ namespace fNbt {
         /// <exception cref="InvalidDataException"> If file compression could not be detected, or decompressing failed. </exception>
         /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
         /// <exception cref="IOException"> If an I/O error occurred while reading the file. </exception>
-        public static string ReadRootTagName(string fileName, NbtCompression compression, bool bigEndian, int bufferSize) {
+        public static string ReadRootTagName(string fileName, NbtCompression compression, NbtFlavor flavor, int bufferSize) {
             if (fileName == null) {
                 throw new ArgumentNullException(nameof(fileName));
             }
@@ -607,7 +608,7 @@ namespace fNbt {
                 throw new ArgumentOutOfRangeException(nameof(bufferSize), bufferSize, "DefaultBufferSize cannot be negative.");
             }
             using (FileStream readFileStream = File.OpenRead(fileName)) {
-                return ReadRootTagName(readFileStream, compression, bigEndian, bufferSize);
+                return ReadRootTagName(readFileStream, compression, flavor, bufferSize);
             }
         }
 
@@ -627,7 +628,7 @@ namespace fNbt {
         /// <exception cref="EndOfStreamException"> If file ended earlier than expected. </exception>
         /// <exception cref="InvalidDataException"> If file compression could not be detected, decompressing failed, or given stream does not support reading. </exception>
         /// <exception cref="NbtFormatException"> If an error occurred while parsing data in NBT format. </exception>
-        public static string ReadRootTagName(Stream stream, NbtCompression compression, bool bigEndian, int bufferSize) {
+        public static string ReadRootTagName(Stream stream, NbtCompression compression, NbtFlavor flavor, int bufferSize) {
             if (stream == null) throw new ArgumentNullException(nameof(stream));
             if (bufferSize < 0) {
                 throw new ArgumentOutOfRangeException(nameof(bufferSize), bufferSize, "DefaultBufferSize cannot be negative.");
@@ -641,14 +642,14 @@ namespace fNbt {
                 case NbtCompression.GZip:
                     using (var decStream = new GZipStream(stream, CompressionMode.Decompress, true)) {
                         if (bufferSize > 0) {
-                            return GetRootNameInternal(new BufferedStream(decStream, bufferSize), bigEndian);
+                            return GetRootNameInternal(new BufferedStream(decStream, bufferSize), flavor);
                         } else {
-                            return GetRootNameInternal(decStream, bigEndian);
+                            return GetRootNameInternal(decStream, flavor);
                         }
                     }
 
                 case NbtCompression.None:
-                    return GetRootNameInternal(stream, bigEndian);
+                    return GetRootNameInternal(stream, flavor);
 
                 case NbtCompression.ZLib:
                     if (stream.ReadByte() != ZLibMagicNumber) {
@@ -657,9 +658,9 @@ namespace fNbt {
                     stream.ReadByte();
                     using (var decStream = new DeflateStream(stream, CompressionMode.Decompress, true)) {
                         if (bufferSize > 0) {
-                            return GetRootNameInternal(new BufferedStream(decStream, bufferSize), bigEndian);
+                            return GetRootNameInternal(new BufferedStream(decStream, bufferSize), flavor);
                         } else {
-                            return GetRootNameInternal(decStream, bigEndian);
+                            return GetRootNameInternal(decStream, flavor);
                         }
                     }
 
@@ -669,7 +670,7 @@ namespace fNbt {
         }
 
 
-        static string GetRootNameInternal(Stream stream, bool bigEndian) {
+        static string GetRootNameInternal(Stream stream, NbtFlavor flavor) {
             NullableSupport.Assert(stream != null);
             int firstByte = stream.ReadByte();
             if (firstByte < 0) {
@@ -677,7 +678,7 @@ namespace fNbt {
             } else if (firstByte != (int)NbtTagType.Compound && firstByte != (int)NbtTagType.List) {
                 throw new NbtFormatException("Given NBT stream does not start with a TAG_Compound or a TAG_List");
             }
-            var reader = new NbtBinaryReader(stream, bigEndian);
+            var reader = new NbtBinaryReader(stream, flavor);
             return reader.ReadString();
         }
 

@@ -16,8 +16,6 @@ namespace fNbt {
         // Each instance has to have its own encoder, because it does maintain state.
         readonly Encoder encoder = Encoding.GetEncoder();
 
-        public bool UseVarInt { get; set; }
-
         public Stream BaseStream {
             get {
                 stream.Flush();
@@ -39,12 +37,14 @@ namespace fNbt {
         // Swap is only needed if endianness of the runtime differs from desired NBT stream
         readonly bool swapNeeded;
 
+        public NbtFlavor Flavor { get; }
 
-        public NbtBinaryWriter(Stream input, bool bigEndian) {
+        public NbtBinaryWriter(Stream input, NbtFlavor flavor) {
             if (input == null) throw new ArgumentNullException(nameof(input));
             if (!input.CanWrite) throw new ArgumentException("Given stream must be writable", nameof(input));
             stream = input;
-            swapNeeded = (BitConverter.IsLittleEndian == bigEndian);
+            this.Flavor = flavor;
+            swapNeeded = flavor.BigEndian == BitConverter.IsLittleEndian;
         }
 
 
@@ -72,7 +72,7 @@ namespace fNbt {
         }
 
         public void Write(int value) {
-            if (UseVarInt) {
+            if (Flavor.UseVarInt) {
                 WriteVarInt(value);
             } else {
                 unchecked {
@@ -107,7 +107,7 @@ namespace fNbt {
         }
 
         public void Write(long value) {
-            if (UseVarInt) {
+            if (Flavor.UseVarInt) {
                 WriteVarLong(value);
             } else {
                 unchecked {
@@ -197,7 +197,7 @@ namespace fNbt {
 
             // Write out string length (as number of bytes)
             int numBytes = Encoding.GetByteCount(value);
-            if (UseVarInt) {
+            if (Flavor.UseVarInt) {
                 WriteLength(numBytes);
             } else {
                 Write((short)numBytes);

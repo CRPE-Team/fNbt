@@ -83,7 +83,7 @@ namespace fNbt {
         }
 
 
-        internal override bool ReadTag(NbtBinaryReader readStream) {
+        internal override unsafe bool ReadTag(NbtBinaryReader readStream) {
             int length = readStream.ReadInt32();
 
             if (length < 0) {
@@ -97,8 +97,14 @@ namespace fNbt {
 
             Value = new long[length];
 
-            for (int i = 0; i < length; i++) {
-                Value[i] = readStream.ReadInt64();
+            if (readStream.Flavor.BigEndian == BitConverter.IsLittleEndian) {
+                for (int i = 0; i < length; i++) {
+                    Value[i] = readStream.ReadInt64();
+                }
+            } else {
+                fixed (long* ptr = Value) {
+                    readStream.Read(new Span<byte>(ptr, Value.Length * sizeof(long)));
+                }
             }
 
             return true;
@@ -128,11 +134,17 @@ namespace fNbt {
         }
 
 
-        internal override void WriteData(NbtBinaryWriter writeStream) {
+        internal override unsafe void WriteData(NbtBinaryWriter writeStream) {
             writeStream.Write(Value.Length);
 
-            for (int i = 0; i < Value.Length; i++) {
-                writeStream.Write(Value[i]);
+            if (writeStream.Flavor.BigEndian == BitConverter.IsLittleEndian) {
+                for (int i = 0; i < Value.Length; i++) {
+                    writeStream.Write(Value[i]);
+                }
+            } else {
+                fixed (long* ptr = Value) {
+                    writeStream.BaseStream.Write(new ReadOnlySpan<byte>(ptr, Value.Length * sizeof(long)));
+                }
             }
         }
 

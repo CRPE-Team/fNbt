@@ -608,9 +608,9 @@ namespace fNbt.Test {
         static void TryReadIncompleteRootTagName(byte[] partialData) {
 
             Assert.Throws<EndOfStreamException>(
-                () => NbtFile.ReadRootTagName(new MemoryStream(partialData), NbtCompression.None, true, 0), "Length=" + partialData.Length);
+                () => NbtFile.ReadRootTagName(new MemoryStream(partialData), NbtCompression.None, NbtFlavor.Default, 0), "Length=" + partialData.Length);
             Assert.Throws<EndOfStreamException>(
-                () => NbtFile.ReadRootTagName(new MemoryStream(partialData), NbtCompression.AutoDetect, true, 0), "Length=" + partialData.Length);
+                () => NbtFile.ReadRootTagName(new MemoryStream(partialData), NbtCompression.AutoDetect, NbtFlavor.Default, 0), "Length=" + partialData.Length);
         }
 
 
@@ -635,7 +635,7 @@ namespace fNbt.Test {
             Assert.Throws<NbtFormatException>(
                 () => new NbtFile().LoadFromBuffer(badHeader, 0, badHeader.Length, NbtCompression.None));
             Assert.Throws<NbtFormatException>(
-                () => NbtFile.ReadRootTagName(new MemoryStream(badHeader), NbtCompression.None, true, 0));
+                () => NbtFile.ReadRootTagName(new MemoryStream(badHeader), NbtCompression.None, NbtFlavor.Default, 0));
 
             byte[] badStringLength = {
                 0x0A, // Compound tag
@@ -646,7 +646,7 @@ namespace fNbt.Test {
             Assert.Throws<NbtFormatException>(
                 () => new NbtFile().LoadFromBuffer(badStringLength, 0, badStringLength.Length, NbtCompression.None));
             Assert.Throws<NbtFormatException>(
-                () => NbtFile.ReadRootTagName(new MemoryStream(badStringLength), NbtCompression.None, true, 0));
+                () => NbtFile.ReadRootTagName(new MemoryStream(badStringLength), NbtCompression.None, NbtFlavor.Default, 0));
 
             byte[] badSecondTag = {
                 0x0A, // Compound tag

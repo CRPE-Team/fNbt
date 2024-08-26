@@ -13,6 +13,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
+		<ProjectReference Include="..\fNbt.Serialization\fNbt.Serialization.csproj" />
 		<ProjectReference Include="..\fNbt\fNbt.csproj" />
 	</ItemGroup>
 

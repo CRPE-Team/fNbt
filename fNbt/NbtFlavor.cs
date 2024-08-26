@@ -1,6 +1,9 @@
-﻿namespace fNbt {
+﻿using System;
+using System.Diagnostics.CodeAnalysis;
+
+namespace fNbt {
     /// <summary> Provides options for reading and writing NBT files and network streams in different versions of the NBT format. </summary>
-    public sealed class NbtFlavor {
+    public sealed class NbtFlavor : IEquatable<NbtFlavor> {
         /// <summary>
         /// Creates a new NbtFlavor with specified custom options.
         /// </summary>
@@ -35,7 +38,7 @@
         public bool UnnamedRootTag { get; private set; }
 
         /// <summary> Whether to use VarInts with ZigZag encoding to store most numbers. </summary>
-        public bool UseVarInt { get; private set; }
+        public bool UseVarInt { get; set; }
 
         /// <summary>
         /// Appropriate options for reading and writing NBT files and network streams in the original format,
@@ -82,8 +85,34 @@
         };
 
         /// <summary>
+        /// Appropriate options for reading and writing NBT files and network streams in the Bedrock Edition format.
+        /// Supports IntArrays and LongArrays, allows lists in addition to compounds as root tags.
+        /// </summary>
+        public static NbtFlavor BedrockNoVarInt { get; } = new() {
+            BigEndian = false,
+            AllowListRootTag = true
+        };
+
+        /// <summary>
         /// The default options for reading and writing NBT files and network streams, set to <see cref="JavaWorldOfColor"/>.
         /// </summary>
         public static NbtFlavor Default { get; set; } = JavaWorldOfColor;
+
+        public bool Equals([AllowNull] NbtFlavor other) {
+            return BigEndian == other.BigEndian &&
+                   AllowListRootTag == other.AllowListRootTag &&
+                   AllowIntArray == other.AllowIntArray &&
+                   AllowLongArray == other.AllowLongArray &&
+                   UnnamedRootTag == other.UnnamedRootTag &&
+                   UseVarInt == other.UseVarInt;
+        }
+
+        public override bool Equals(object obj) {
+            return obj is NbtFlavor flavor && Equals(flavor);
+        }
+
+        public override int GetHashCode() {
+            return HashCode.Combine(BigEndian, AllowListRootTag, AllowIntArray, AllowLongArray, UnnamedRootTag, UseVarInt);
+        }
     }
 }

@@ -25,7 +25,7 @@ namespace fNbt {
         /// <exception cref="ArgumentNullException"> <paramref name="stream"/> or <paramref name="rootTagName"/> is <c>null</c>. </exception>
         /// <exception cref="ArgumentException"> <paramref name="stream"/> is not writable. </exception>
         public NbtWriter(Stream stream, string rootTagName)
-            : this(stream, rootTagName, true) { }
+            : this(stream, rootTagName, NbtFlavor.Default) { }
 
 
         /// <summary> Initializes a new instance of the NbtWriter class. </summary>
@@ -34,9 +34,9 @@ namespace fNbt {
         /// <param name="bigEndian"> Whether NBT data should be in Big-Endian encoding. </param>
         /// <exception cref="ArgumentNullException"> <paramref name="stream"/> or <paramref name="rootTagName"/> is <c>null</c>. </exception>
         /// <exception cref="ArgumentException"> <paramref name="stream"/> is not writable. </exception>
-        public NbtWriter(Stream stream, string rootTagName, bool bigEndian) {
+        public NbtWriter(Stream stream, string rootTagName, NbtFlavor flavor) {
             if (rootTagName == null) throw new ArgumentNullException(nameof(rootTagName));
-            writer = new NbtBinaryWriter(stream, bigEndian);
+            writer = new NbtBinaryWriter(stream, flavor);
             writer.Write((byte)NbtTagType.Compound);
             writer.Write(rootTagName);
             parentType = NbtTagType.Compound;

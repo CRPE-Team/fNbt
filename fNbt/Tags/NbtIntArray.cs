@@ -81,7 +81,7 @@ namespace fNbt {
         }
 
 
-        internal override bool ReadTag(NbtBinaryReader readStream) {
+        internal override unsafe bool ReadTag(NbtBinaryReader readStream) {
             int length = readStream.ReadInt32();
             if (length < 0) {
                 throw new NbtFormatException("Negative length given in TAG_Int_Array");
@@ -93,8 +93,15 @@ namespace fNbt {
             }
 
             Value = new int[length];
-            for (int i = 0; i < length; i++) {
-                Value[i] = readStream.ReadInt32();
+
+            if (readStream.Flavor.BigEndian == BitConverter.IsLittleEndian) {
+                for (int i = 0; i < length; i++) {
+                    Value[i] = readStream.ReadInt32();
+                }
+            } else {
+                fixed (int* ptr = Value) {
+                    readStream.Read(new Span<byte>(ptr, Value.Length * sizeof(int)));
+                }
             }
             return true;
         }
@@ -117,10 +124,18 @@ namespace fNbt {
         }
 
 
-        internal override void WriteData(NbtBinaryWriter writeStream) {
+        internal override unsafe void WriteData(NbtBinaryWriter writeStream) {
             writeStream.Write(Value.Length);
-            for (int i = 0; i < Value.Length; i++) {
-                writeStream.Write(Value[i]);
+
+            if (writeStream.Flavor.BigEndian == BitConverter.IsLittleEndian) {
+                for (int i = 0; i < Value.Length; i++) {
+                    writeStream.Write(Value[i]);
+                }
+            }
+            else {
+                fixed (int* ptr = Value) {
+                    writeStream.BaseStream.Write(new ReadOnlySpan<byte>(ptr, Value.Length * sizeof(int)));
+                }
             }
         }
 
