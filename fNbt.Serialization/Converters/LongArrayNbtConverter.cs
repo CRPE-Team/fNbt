@@ -3,7 +3,7 @@
 namespace fNbt.Serialization.Converters {
     public class LongArrayNbtConverter : NbtConverter {
         public override bool CanConvert(Type type) {
-            return type == typeof(int[]);
+            return type == typeof(long[]);
         }
 
         public override NbtTagType GetTagType(Type type, NbtSerializationSettings settings) {

@@ -1,14 +1,14 @@
 ﻿using System;
 
 namespace fNbt.Serialization.NbtObject {
-    internal class SerializationProperty {
+    internal class NbtSerializationProperty {
         public Type Type {  get; set; }
 
         public string Name { get; set; }
 
         public Func<object, object[], object> Get { get; set; }
 
-        public Action<object, object[]> Set { get; set; }
+        public Func<object, object[], object> Set { get; set; }
 
         public NbtSerializationCache SerializationCache { get; set; }
 

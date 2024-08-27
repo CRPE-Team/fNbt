@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
-using System.Xml.Linq;
 using fNbt.Serialization.Converters;
 using fNbt.Serialization.NbtObject;
 
@@ -9,7 +7,7 @@ namespace fNbt.Serialization {
     internal class NbtSerializationCache {
         public Type Type { get; set; }
 
-        public Dictionary<string, SerializationProperty> Properties { get; set; }
+        public Dictionary<string, NbtSerializationProperty> Properties { get; set; } = new Dictionary<string, NbtSerializationProperty>();
 
         public NbtConverter Converter { get; set; }
 
@@ -36,7 +34,7 @@ namespace fNbt.Serialization {
                 name = stream.ReadString();
             }
 
-            if (Converter != null) {
+            if (Converter != null && Converter.CanRead) {
                 return Converter.Read(stream, Type, name, Settings);
             } else {
                 var obj = Activator.CreateInstance(Type);
@@ -48,7 +46,11 @@ namespace fNbt.Serialization {
         }
 
         public void Write(NbtBinaryWriter stream, object value, string name) {
-            if (Converter != null) {
+            if (true) { //если включена настройка! (по умолчанию включена)
+                // проверяем call stack по потоковой переменной List (RuntimeLoopHanling)
+            }
+
+            if (Converter != null && Converter.CanWrite) {
                 Converter.Write(stream, value, name, Settings);
             } else if (value.GetType() != Type) {
                 NbtSerializer.ObjectNbtConverter.Write(stream, value, name, Settings);
@@ -63,7 +65,7 @@ namespace fNbt.Serialization {
         }
 
         public void WriteData(NbtBinaryWriter stream, object value) {
-            if (Converter != null) {
+            if (Converter != null && Converter.CanWrite) {
                 Converter.WriteData(stream, value, Settings);
             } else if (value.GetType() != Type) {
                 NbtSerializer.ObjectNbtConverter.WriteData(stream, value, Settings);

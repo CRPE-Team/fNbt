@@ -44,8 +44,7 @@ namespace fNbt.Serialization.Converters {
                     }
                 }
 
-                stream.Write(pair.Key.ToString());
-                ElementSerializationCache.WriteData(stream, pairValue);
+                ElementSerializationCache.Write(stream, pairValue, pair.Key.ToString());
             }
 
             stream.Write(NbtTagType.End);

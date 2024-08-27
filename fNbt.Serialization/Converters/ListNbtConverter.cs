@@ -5,7 +5,7 @@ namespace fNbt.Serialization.Converters {
     internal class ListNbtConverter : ArrayNbtConverter {
         public override bool CanConvert(Type type) {
             return typeof(IList).IsAssignableFrom(type)
-                && ElementSerializationCache.Type.IsAssignableFrom(type.GetElementType());
+                && ElementSerializationCache.Type.IsAssignableFrom(type.GetGenericArguments()[0]);
         }
 
         public override object Read(NbtBinaryReader stream, Type type, string name, NbtSerializationSettings settings) {
@@ -23,7 +23,7 @@ namespace fNbt.Serialization.Converters {
         public override void WriteData(NbtBinaryWriter stream, object value, NbtSerializationSettings settings) {
             var list = (IList)value;
 
-            stream.Write(ElementSerializationCache.GetTagType(list.GetType().GetElementType()));
+            stream.Write(ElementSerializationCache.GetTagType(list.GetType().GetGenericArguments()[0]));
             stream.Write(list.Count);
 
             foreach (var element in list) {
