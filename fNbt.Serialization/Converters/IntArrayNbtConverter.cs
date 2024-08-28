@@ -6,11 +6,11 @@ namespace fNbt.Serialization.Converters {
             return type == typeof(int[]);
         }
 
-        public override NbtTagType GetTagType(Type type, NbtSerializationSettings settings) {
+        public override NbtTagType GetTagType(Type type, NbtSerializerSettings settings) {
             return NbtTagType.IntArray;
         }
 
-        public override unsafe object Read(NbtBinaryReader stream, Type type, string name, NbtSerializationSettings settings) {
+        public override unsafe object Read(NbtBinaryReader stream, Type type, string name, NbtSerializerSettings settings) {
             var length = stream.ReadInt32();
             var array = new int[length];
 
@@ -27,13 +27,13 @@ namespace fNbt.Serialization.Converters {
             return array;
         }
 
-        public override void Write(NbtBinaryWriter stream, object value, string name, NbtSerializationSettings settings) {
+        public override void Write(NbtBinaryWriter stream, object value, string name, NbtSerializerSettings settings) {
             stream.Write(NbtTagType.IntArray);
             stream.Write(name);
             WriteData(stream, value, settings);
         }
 
-        public override unsafe void WriteData(NbtBinaryWriter stream, object value, NbtSerializationSettings settings) {
+        public override unsafe void WriteData(NbtBinaryWriter stream, object value, NbtSerializerSettings settings) {
             var array = (int[])value;
             stream.Write(array.Length);
             if (stream.Flavor.BigEndian == BitConverter.IsLittleEndian) {
@@ -45,6 +45,14 @@ namespace fNbt.Serialization.Converters {
                     stream.BaseStream.Write(new ReadOnlySpan<byte>(ptr, array.Length * sizeof(int)));
                 }
             }
+        }
+
+        public override object FromNbt(NbtTag tag, Type type, NbtSerializerSettings settings) {
+            return tag.IntArrayValue;
+        }
+
+        public override NbtTag ToNbt(object value, string name, NbtSerializerSettings settings) {
+            return new NbtIntArray(name, (int[])value);
         }
     }
 }

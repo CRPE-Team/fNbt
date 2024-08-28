@@ -1,17 +1,27 @@
 ﻿using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Reflection;
 using fNbt.Serialization.Converters;
 using fNbt.Serialization.NbtObject;
 
 namespace fNbt.Serialization {
     internal static class SerializationDescriber {
-        public static NbtSerializationCache Describe(NbtSerializationProfile profile, NbtPropertyAttribute attribute) {
-            return Describe(profile.ObjectType, attribute, profile.Settings);
+        private static readonly ConcurrentDictionary<NbtSerializationProfile, NbtSerializationCache> _cache = new ConcurrentDictionary<NbtSerializationProfile, NbtSerializationCache>();
+
+        public static NbtSerializationCache Describe(Type type, NbtSerializerSettings settings, NbtPropertyAttribute attribute = null) {
+            var profile = new NbtSerializationProfile() {
+                ObjectType = type,
+                Settings = settings ?? NbtSerializer.DefaultSettings
+            };
+
+            return _cache.GetOrAdd(profile, p => Describe(p, attribute));
         }
 
-        private static NbtSerializationCache Describe(Type type, NbtPropertyAttribute attribute, NbtSerializationSettings settings) {
+        private static NbtSerializationCache Describe(NbtSerializationProfile profile, NbtPropertyAttribute attribute) {
             NbtConverter converter = null;
+            var type = profile.ObjectType;
+            var settings = profile.Settings;
 
             if (attribute?.Converter != null && attribute.Converter.CanConvert(type)) {
                 converter = attribute.Converter;
@@ -40,19 +50,19 @@ namespace fNbt.Serialization {
                     var gen = type.GetGenericArguments()[1];
 
                     converter = new DictionaryNbtConverter() {
-                        ElementSerializationCache = NbtSerializer.GetCache(gen, settings)
+                        ElementSerializationCache = Describe(gen, settings)
                     };
                 } else if (type.IsArray) {
                     var gen = type.GetElementType();
 
                     converter = new ArrayNbtConverter() {
-                        ElementSerializationCache = NbtSerializer.GetCache(gen, settings)
+                        ElementSerializationCache = Describe(gen, settings)
                     };
                 } else if (typeof(IList).IsAssignableFrom(type)) {
                     var gen = type.GetGenericArguments()[0];
 
                     converter = new ListNbtConverter() {
-                        ElementSerializationCache = NbtSerializer.GetCache(gen, settings)
+                        ElementSerializationCache = Describe(gen, settings)
                     };
                 }
             }
@@ -62,6 +72,8 @@ namespace fNbt.Serialization {
                 Type = type,
                 Settings = settings
             };
+
+            _cache.TryAdd(profile, cache);
 
             if (converter == null) {
                 var properties = type.GetProperties();
@@ -81,7 +93,7 @@ namespace fNbt.Serialization {
                     var nbtProperty = new NbtSerializationProperty() {
                         Type = property.PropertyType,
                         Name = name,
-                        SerializationCache = NbtSerializer.GetCache(property.PropertyType, settings, atr),
+                        SerializationCache = Describe(property.PropertyType, settings, atr),
                         Settings = settings
                     };
 

@@ -2,7 +2,7 @@
     public enum LoopReferenceHandling {
         Ignore = 1,
         Error = 2,
-        Handling = 3,
+        Serialize = 3,
 
         Default = Error,
     }

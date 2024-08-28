@@ -6,9 +6,9 @@ using fNbt.Serialization.Handlings;
 using fNbt.Serialization.NamingStrategy;
 
 namespace fNbt.Serialization {
-    public class NbtSerializationSettings {
+    public class NbtSerializerSettings {
         public NbtFlavor Flavor { get; set; } = NbtFlavor.Default;
-        public List<NbtConverter> Converters { get; set; }
+        public List<NbtConverter> Converters { get; set; } = new List<NbtConverter>();
 
         public NbtNamingStrategy NamingStrategy { get; set; }
 
@@ -16,16 +16,18 @@ namespace fNbt.Serialization {
         public PropertySetHandling PropertySetHandling { get; set; } = PropertySetHandling.Default;
         public MissingMemberHandling MissingMemberHandling { get; set; } = MissingMemberHandling.Default;
         public NullReferenceHandling NullReferenceHandling { get; set; } = NullReferenceHandling.Default;
+        public LoopReferenceHandling LoopReferenceHandling { get; set; } = LoopReferenceHandling.Default;
 
         public override bool Equals(object obj) {
-            return obj is NbtSerializationSettings settings &&
+            return obj is NbtSerializerSettings settings &&
                    EqualityComparer<NbtFlavor>.Default.Equals(Flavor, settings.Flavor) &&
                    Converters.SequenceEqual(settings.Converters) &&
                    EqualityComparer<NbtNamingStrategy>.Default.Equals(NamingStrategy, settings.NamingStrategy) &&
                    PropertyGetHandling == settings.PropertyGetHandling &&
                    PropertySetHandling == settings.PropertySetHandling &&
                    MissingMemberHandling == settings.MissingMemberHandling &&
-                   NullReferenceHandling == settings.NullReferenceHandling;
+                   NullReferenceHandling == settings.NullReferenceHandling &&
+                   LoopReferenceHandling == settings.LoopReferenceHandling;
         }
 
         public override int GetHashCode() {
@@ -38,7 +40,8 @@ namespace fNbt.Serialization {
                 PropertyGetHandling, 
                 PropertySetHandling, 
                 MissingMemberHandling, 
-                NullReferenceHandling);
+                NullReferenceHandling,
+                LoopReferenceHandling);
         }
     }
 }

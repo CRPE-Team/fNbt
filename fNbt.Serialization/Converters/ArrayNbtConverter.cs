@@ -15,11 +15,11 @@ namespace fNbt.Serialization.Converters {
                 && elementType != typeof(long);
         }
 
-        public override NbtTagType GetTagType(Type type, NbtSerializationSettings settings) {
+        public override NbtTagType GetTagType(Type type, NbtSerializerSettings settings) {
             return NbtTagType.List;
         }
 
-        public override object Read(NbtBinaryReader stream, Type type, string name, NbtSerializationSettings settings) {
+        public override object Read(NbtBinaryReader stream, Type type, string name, NbtSerializerSettings settings) {
             var listType = stream.ReadTagType();
 
             var length = stream.ReadInt32();
@@ -31,14 +31,14 @@ namespace fNbt.Serialization.Converters {
             return array;
         }
 
-        public override void Write(NbtBinaryWriter stream, object value, string name, NbtSerializationSettings settings) {
+        public override void Write(NbtBinaryWriter stream, object value, string name, NbtSerializerSettings settings) {
             stream.Write(NbtTagType.List);
             stream.Write(name);
 
             WriteData(stream, value, settings);
         }
 
-        public override void WriteData(NbtBinaryWriter stream, object value, NbtSerializationSettings settings) {
+        public override void WriteData(NbtBinaryWriter stream, object value, NbtSerializerSettings settings) {
             var array = (Array)value;
 
             stream.Write(ElementSerializationCache.GetTagType(array.GetType().GetElementType()));
@@ -46,6 +46,32 @@ namespace fNbt.Serialization.Converters {
             for (var i = 0; i < array.Length; i++) {
                 ElementSerializationCache.WriteData(stream, array.GetValue(i));
             }
+        }
+
+        public override object FromNbt(NbtTag tag, Type type, NbtSerializerSettings settings) {
+            var nbtList = tag as NbtList;
+            var array = Array.CreateInstance(type.GetElementType(), nbtList.Count);
+
+            for (var i = 0; i < nbtList.Count; i++) {
+                array.SetValue(ElementSerializationCache.FromNbt(nbtList[i]), i);
+            }
+
+            return array;
+        }
+
+        public override NbtTag ToNbt(object value, string name, NbtSerializerSettings settings) {
+            var array = (Array)value;
+            var nbtList = new NbtList(name);
+
+            foreach (var val in array) {
+                var tag = ElementSerializationCache.ToNbt(val, null);
+
+                if (tag != null) {
+                    nbtList.Add(tag);
+                }
+            }
+
+            return nbtList;
         }
     }
 }

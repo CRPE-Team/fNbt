@@ -12,22 +12,48 @@ namespace fNbt.Serialization.NbtObject {
 
         public NbtSerializationCache SerializationCache { get; set; }
 
-        public NbtSerializationSettings Settings { get; set; }
+        public NbtSerializerSettings Settings { get; set; }
 
         public void Read(object obj, NbtBinaryReader stream) {
-            if (Set == null && Settings.PropertySetHandling == Handlings.PropertySetHandling.Error) {
-                throw new NbtSerializationException($"set method of property [{Type}.{Name}] is not implemented");
+            if (Set == null) {
+                if (Settings.PropertySetHandling == Handlings.PropertySetHandling.Error) {
+                    throw new NbtSerializationException($"set method of property [{Type}.{Name}] is not implemented");
+                }
+            } else {
+                Set(obj, [SerializationCache.Read(stream, Name)]);
             }
-
-            Set(obj, [SerializationCache.Read(stream, Name)]);
         }
 
         public void Write(object obj, NbtBinaryWriter stream) {
-            if (Get == null && Settings.PropertyGetHandling == Handlings.PropertyGetHandling.Error) {
-                throw new NbtSerializationException($"get method of property [{Type}.{Name}] is not implemented");
+            if (Get == null) {
+                if (Settings.PropertyGetHandling == Handlings.PropertyGetHandling.Error) {
+                    throw new NbtSerializationException($"get method of property [{Type}.{Name}] is not implemented");
+                }
+            } else {
+                SerializationCache.Write(stream, Get(obj, []), Name);
             }
+        }
 
-            SerializationCache.Write(stream, Get(obj, []), Name);
+        public void FromNbt(object obj, NbtTag tag) {
+            if (Set == null) {
+                if (Settings.PropertySetHandling == Handlings.PropertySetHandling.Error) {
+                    throw new NbtSerializationException($"set method of property [{Type}.{Name}] is not implemented");
+                }
+            } else {
+                Set(obj, [SerializationCache.FromNbt(tag)]);
+            }
+        }
+
+        public NbtTag ToNbt(object obj) {
+            if (Get == null) {
+                if (Settings.PropertyGetHandling == Handlings.PropertyGetHandling.Error) {
+                    throw new NbtSerializationException($"get method of property [{Type}.{Name}] is not implemented");
+                }
+
+                return null;
+            } else {
+                return SerializationCache.ToNbt(Get(obj, []), Name);
+            }
         }
     }
 }

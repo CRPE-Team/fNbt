@@ -7,22 +7,30 @@ namespace fNbt.Serialization.Converters {
                 || type == typeof(ulong);
         }
 
-        public override NbtTagType GetTagType(Type type, NbtSerializationSettings settings) {
+        public override NbtTagType GetTagType(Type type, NbtSerializerSettings settings) {
             return NbtTagType.Long;
         }
 
-        public override object Read(NbtBinaryReader stream, Type type, string name, NbtSerializationSettings settings) {
+        public override object Read(NbtBinaryReader stream, Type type, string name, NbtSerializerSettings settings) {
             return stream.ReadInt64();
         }
 
-        public override void Write(NbtBinaryWriter stream, object value, string name, NbtSerializationSettings settings) {
+        public override void Write(NbtBinaryWriter stream, object value, string name, NbtSerializerSettings settings) {
             stream.Write(NbtTagType.Long);
             stream.Write(name);
             WriteData(stream, value, settings);
         }
 
-        public override void WriteData(NbtBinaryWriter stream, object value, NbtSerializationSettings settings) {
+        public override void WriteData(NbtBinaryWriter stream, object value, NbtSerializerSettings settings) {
             stream.Write((long)value);
+        }
+
+        public override object FromNbt(NbtTag tag, Type type, NbtSerializerSettings settings) {
+            return tag.LongValue;
+        }
+
+        public override NbtTag ToNbt(object value, string name, NbtSerializerSettings settings) {
+            return new NbtLong(name, (long)value);
         }
     }
 }

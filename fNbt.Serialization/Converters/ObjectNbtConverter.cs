@@ -6,20 +6,28 @@ namespace fNbt.Serialization.Converters {
             return type == typeof(object);
         }
 
-        public override NbtTagType GetTagType(Type type, NbtSerializationSettings settings) {
+        public override NbtTagType GetTagType(Type type, NbtSerializerSettings settings) {
             return NbtSerializer.GetTagTypeInternal(type, settings);
         }
 
-        public override object Read(NbtBinaryReader stream, Type type, string name, NbtSerializationSettings settings) {
+        public override object Read(NbtBinaryReader stream, Type type, string name, NbtSerializerSettings settings) {
             return NbtSerializer.ReadInternal(type, stream, name, settings);
         }
 
-        public override void Write(NbtBinaryWriter stream, object value, string name, NbtSerializationSettings settings) {
+        public override void Write(NbtBinaryWriter stream, object value, string name, NbtSerializerSettings settings) {
             NbtSerializer.WriteInternal(value, stream, name, settings);
         }
 
-        public override void WriteData(NbtBinaryWriter stream, object value, NbtSerializationSettings settings) {
+        public override void WriteData(NbtBinaryWriter stream, object value, NbtSerializerSettings settings) {
             NbtSerializer.WriteDataInternal(value, stream, settings);
+        }
+
+        public override object FromNbt(NbtTag tag, Type type, NbtSerializerSettings settings) {
+            return NbtSerializer.FromNbtInternal(type, tag, settings);
+        }
+
+        public override NbtTag ToNbt(object value, string name, NbtSerializerSettings settings) {
+            return NbtSerializer.ToNbtInternal(value, name, settings);
         }
     }
 }
