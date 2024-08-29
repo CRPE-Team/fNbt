@@ -3,7 +3,7 @@ using System.Diagnostics.CodeAnalysis;
 
 namespace fNbt {
     /// <summary> Provides options for reading and writing NBT files and network streams in different versions of the NBT format. </summary>
-    public sealed class NbtFlavor : IEquatable<NbtFlavor> {
+    public sealed class NbtFlavor : IEquatable<NbtFlavor>, ICloneable {
         /// <summary>
         /// Creates a new NbtFlavor with specified custom options.
         /// </summary>
@@ -44,7 +44,7 @@ namespace fNbt {
         /// Appropriate options for reading and writing NBT files and network streams in the original format,
         /// used for Indev, Infdev, Alpha, Beta, and Java Editions up through version 1.1.
         /// </summary>
-        public static NbtFlavor JavaLegacy { get; } = new() {
+        public static NbtFlavor JavaLegacy => new() {
             AllowIntArray = false,
             AllowLongArray = false,
         };
@@ -53,7 +53,7 @@ namespace fNbt {
         /// Appropriate options for reading and writing NBT files and network streams with IntArray tags,
         /// introduced as part of the Anvil format in Java Edition 1.2.1 and used until 1.12.
         /// </summary>
-        public static NbtFlavor JavaAnvil { get; } = new() {
+        public static NbtFlavor JavaAnvil => new() {
             AllowLongArray = false,
         };
 
@@ -62,14 +62,14 @@ namespace fNbt {
         /// introduced by Java Edition 1.12 (World of Color) and still used in files today.
         /// Also works for network streams as used by Java Edition 1.12 through 1.20.1, but not later.
         /// </summary>
-        public static NbtFlavor JavaWorldOfColor { get; } = new();
+        public static NbtFlavor JavaWorldOfColor => new();
 
         /// <summary>
         /// Appropriate options for reading and writing NBT network streams as used by Java Edition 1.20.2 and later.
         /// Almost identical to <see cref="JavaWorldOfColor"/> but usses unnamed compound tags for roots,
         /// which was not allowed other flavor of NBT. Should not be used for loading/saving files.
         /// </summary>
-        public static NbtFlavor JavaNetwork { get; } = new() {
+        public static NbtFlavor JavaNetwork => new() {
             UnnamedRootTag = true,
         };
 
@@ -78,7 +78,7 @@ namespace fNbt {
         /// Supports IntArrays and LongArrays, allows lists in addition to compounds as root tags, and encodes
         /// numbers using VarInts.
         /// </summary>
-        public static NbtFlavor Bedrock { get; } = new() {
+        public static NbtFlavor Bedrock => new() {
             BigEndian = false,
             AllowListRootTag = true,
             UseVarInt = true
@@ -88,15 +88,17 @@ namespace fNbt {
         /// Appropriate options for reading and writing NBT files and network streams in the Bedrock Edition format.
         /// Supports IntArrays and LongArrays, allows lists in addition to compounds as root tags.
         /// </summary>
-        public static NbtFlavor BedrockNoVarInt { get; } = new() {
+        public static NbtFlavor BedrockNoVarInt => new() {
             BigEndian = false,
             AllowListRootTag = true
         };
 
+        private static NbtFlavor _default = JavaWorldOfColor;
+
         /// <summary>
         /// The default options for reading and writing NBT files and network streams, set to <see cref="JavaWorldOfColor"/>.
         /// </summary>
-        public static NbtFlavor Default { get; set; } = JavaWorldOfColor;
+        public static NbtFlavor Default { get => (NbtFlavor)_default.Clone(); set => _default = (NbtFlavor)value.Clone(); }
 
         public bool Equals([AllowNull] NbtFlavor other) {
             return BigEndian == other.BigEndian &&
@@ -113,6 +115,17 @@ namespace fNbt {
 
         public override int GetHashCode() {
             return HashCode.Combine(BigEndian, AllowListRootTag, AllowIntArray, AllowLongArray, UnnamedRootTag, UseVarInt);
+        }
+
+        public object Clone() {
+            return new NbtFlavor() {
+                BigEndian = BigEndian,
+                AllowListRootTag = AllowListRootTag,
+                AllowIntArray = AllowIntArray,
+                AllowLongArray = AllowLongArray,
+                UnnamedRootTag = UnnamedRootTag,
+                UseVarInt = UseVarInt
+            };
         }
     }
 }
