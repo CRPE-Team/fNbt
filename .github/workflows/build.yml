@@ -24,11 +24,9 @@ jobs:
           token: ${{secrets.github_token}}    
         
       - name: Dotnet Restore
-        working-directory: src/fNbt
         run: dotnet restore
       
       - name: Build & Pack
-        working-directory: src/fNbt
         run: |
           export PKG_VERSION=1.0.${{ steps.buildnumber.outputs.build_number }}
           dotnet build --configuration Release
@@ -36,5 +34,4 @@ jobs:
       
       - name: Publish Artifacts
         shell: bash
-        working-directory: src/fNbt
         run: dotnet nuget push ./nuget/*.symbols.nupkg -s "https://api.nuget.org/v3/index.json" -k ${{ secrets.NUGET_KEY }} --skip-duplicate
