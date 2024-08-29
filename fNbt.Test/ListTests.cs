@@ -42,6 +42,7 @@ namespace fNbt.Test {
 
             // check IList.Contains
             Assert.IsTrue(iList.Contains(testTag));
+            Assert.IsFalse(iList.Contains(null));
 
             // check IList.Remove
             iList.Remove(testTag);
@@ -288,8 +289,7 @@ namespace fNbt.Test {
                 writtenList.Add(new NbtInt(i));
             }
 
-            NbtCompound rootTag = (NbtCompound)writtenFile.RootTag;
-            rootTag.Add(writtenList);
+            writtenFile.RootTag.Add(writtenList);
 
             // test saving
             byte[] data = writtenFile.SaveToBuffer(NbtCompression.None);
@@ -337,16 +337,15 @@ namespace fNbt.Test {
                 }
             });
             byte[] buffer = testFile.SaveToBuffer(NbtCompression.None);
-            
+
             testFile.LoadFromBuffer(buffer, 0, buffer.Length, NbtCompression.None);
 
-            NbtCompound testFileRootTag = (NbtCompound)testFile.RootTag;
-            NbtList list1 = testFileRootTag.Get<NbtList>("emptyList");
-            Assert.AreEqual(list1.Count,0);
+            NbtList list1 = testFile.RootTag.Get<NbtList>("emptyList");
+            Assert.AreEqual(list1.Count, 0);
             Assert.AreEqual(list1.ListType, NbtTagType.End);
 
-            NbtList list2 = testFileRootTag.Get<NbtList>("listyList");
-            Assert.AreEqual(list2.Count,1);
+            NbtList list2 = testFile.RootTag.Get<NbtList>("listyList");
+            Assert.AreEqual(list2.Count, 1);
             Assert.AreEqual(list2.ListType, NbtTagType.List);
             Assert.AreEqual(list2.Get<NbtList>(0).Count, 0);
             Assert.AreEqual(list2.Get<NbtList>(0).ListType, NbtTagType.End);
@@ -375,21 +374,30 @@ namespace fNbt.Test {
                 var file = new NbtFile();
                 long bytesRead = file.LoadFromBuffer(data, 0, data.Length, NbtCompression.None);
                 Assert.AreEqual(bytesRead, data.Length);
-                NbtCompound rootTag = (NbtCompound)file.RootTag;
-                Assert.AreEqual(1, rootTag.Get<NbtList>("OuterList").Count);
-                Assert.AreEqual(null, rootTag.Get<NbtList>("OuterList").Get<NbtCompound>(0).Name);
+                Assert.AreEqual(1, file.RootTag.Get<NbtList>("OuterList").Count);
+                Assert.AreEqual(null, file.RootTag.Get<NbtList>("OuterList").Get<NbtCompound>(0).Name);
                 Assert.AreEqual(1,
-                                rootTag.Get<NbtList>("OuterList")
+                                file.RootTag.Get<NbtList>("OuterList")
                                     .Get<NbtCompound>(0)
                                     .Get<NbtList>("InnerList")
                                     .Count);
                 Assert.AreEqual(null,
-                                rootTag.Get<NbtList>("OuterList")
+                                file.RootTag.Get<NbtList>("OuterList")
                                     .Get<NbtCompound>(0)
                                     .Get<NbtList>("InnerList")
                                     .Get<NbtCompound>(0)
                                     .Name);
             }
+        }
+
+
+        [Test]
+        public void FirstInsertTest() {
+            NbtList list = new NbtList();
+            Assert.AreEqual(NbtTagType.Unknown, list.ListType);
+            list.Insert(0, new NbtInt(123));
+            // Inserting a tag should set ListType
+            Assert.AreEqual(NbtTagType.Int, list.ListType);
         }
     }
 }

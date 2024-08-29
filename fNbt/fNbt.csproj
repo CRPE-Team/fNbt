@@ -1,21 +1,21 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
 	<PropertyGroup>
-		<TargetFrameworks>net6.0; netcoreapp3.1; netstandard2.1</TargetFrameworks>
+		<TargetFrameworks>net8.0; netcoreapp3.1; netstandard2.1</TargetFrameworks>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<PackageId>MiNET.fNbt</PackageId>
+		<PackageId>CRPE-MiNET.fNbt</PackageId>
 		<Version>0.0.0</Version>
-		<Authors>NiclasOlofsson; kennyvv</Authors>
-		<Company>Niclas Olofsson</Company>
-		<Description>MiNET fnbt version with support for MCPE 0.16+ varint and string.</Description>
-		<Copyright>2010-2011 Erik Davidson; 2012-2015 Matvei Stefarov; 2016-2022 Niclas Olofsson</Copyright>
-		<PackageLicenseUrl>https://github.com/NiclasOlofsson/fNbt/blob/master/docs/LICENSE</PackageLicenseUrl>
-		<PackageProjectUrl>https://github.com/NiclasOlofsson/fNbt</PackageProjectUrl>
-		<RepositoryUrl>https://github.com/NiclasOlofsson/fNbt</RepositoryUrl>
-		<PackageIconUrl><![CDATA[https://secure.gravatar.com/avatar/2ba5d72bdad85108d14512c4d27ea550?s=128&r=g&d=retro]]></PackageIconUrl>
-		<PackageTags>MiNET fnbt nbt MCPE varint and string</PackageTags>
+		<Authors>NiclasOlofsson; kennyvv; DarkLexFirst</Authors>
+		<Company>CRPE-Team</Company>
+		<Description>CRPE-MiNET fnbt version with support for MCPE 0.16+ varint and string.</Description>
+		<Copyright>2010-2011 Erik Davidson; 2012-2024 Matvei Stefarov; 2016-2022 Niclas Olofsson</Copyright>
+		<PackageLicenseUrl>https://github.com/CRPE-Team/fNbt/blob/master/docs/LICENSE</PackageLicenseUrl>
+		<PackageProjectUrl>https://github.com/CRPE-Team/fNbt</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/CRPE-Team/fNbt</RepositoryUrl>
+		<PackageIconUrl><![CDATA[https://avatars.githubusercontent.com/u/73496612?s=200&v=4]]></PackageIconUrl>
+		<PackageTags>MiNET fnbt nbt MCPE CRPE varint and string</PackageTags>
 		<FileVersion>1.0.0.0</FileVersion>
 		<AssemblyVersion>1.0.0.0</AssemblyVersion>
 

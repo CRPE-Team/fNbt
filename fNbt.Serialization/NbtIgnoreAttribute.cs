@@ -1,5 +1,8 @@
-using System;
+﻿using System;
 
 namespace fNbt.Serialization {
-    public class NbtIgnoreAttribute : Attribute {}
+    [AttributeUsage(AttributeTargets.Property)]
+    public class NbtIgnoreAttribute : Attribute {
+
+    }
 }

@@ -1,17 +1,13 @@
 ﻿using System;
 using System.Globalization;
-using System.IO;
 using System.Text;
-using fNbt.Tags;
-using JetBrains.Annotations;
 
 namespace fNbt {
     /// <summary> Base class for different kinds of named binary tags. </summary>
     public abstract class NbtTag : ICloneable {
         /// <summary> Parent compound tag, either NbtList or NbtCompound, if any.
         /// May be <c>null</c> for detached tags. </summary>
-        [CanBeNull]
-        public NbtTag Parent { get; internal set; }
+        public NbtTag? Parent { get; internal set; }
 
         /// <summary> Type of this tag. </summary>
         public abstract NbtTagType TagType { get; }
@@ -36,18 +32,16 @@ namespace fNbt {
         /// <exception cref="ArgumentNullException"> If <paramref name="value"/> is <c>null</c>, and <c>Parent</c> tag is an NbtCompound.
         /// Name of tags inside an <c>NbtCompound</c> may not be null. </exception>
         /// <exception cref="ArgumentException"> If this tag resides in an <c>NbtCompound</c>, and a sibling tag with the name already exists. </exception>
-        [CanBeNull]
-        public string Name {
+        public string? Name {
             get { return name; }
             set {
                 if (name == value) {
                     return;
                 }
 
-                var parentAsCompound = Parent as NbtCompound;
-                if (parentAsCompound != null) {
+                if (Parent is NbtCompound parentAsCompound) {
                     if (value == null) {
-                        throw new ArgumentNullException("value",
+                        throw new ArgumentNullException(nameof(value),
                                                         "Name of tags inside an NbtCompound may not be null.");
                     } else if (name != null) {
                         parentAsCompound.RenameTag(name, value);
@@ -58,18 +52,17 @@ namespace fNbt {
             }
         }
 
-        protected string name;
+        // Used by impls to bypass setter checks (and avoid side effects) when initializing state
+        internal string? name;
 
         /// <summary> Gets the full name of this tag, including all parent tag names, separated by dots. 
         /// Unnamed tags show up as empty strings. </summary>
-        [NotNull]
         public string Path {
             get {
                 if (Parent == null) {
                     return Name ?? "";
                 }
-                var parentAsList = Parent as NbtList;
-                if (parentAsList != null) {
+                if (Parent is NbtList parentAsList) {
                     return parentAsList.Path + '[' + parentAsList.IndexOf(this) + ']';
                 } else {
                     return Parent.Path + '.' + Name;
@@ -77,14 +70,14 @@ namespace fNbt {
             }
         }
 
-        internal abstract bool ReadTag([NotNull] NbtBinaryReader readStream);
+        internal abstract bool ReadTag(NbtBinaryReader readStream);
 
-        internal abstract void SkipTag([NotNull] NbtBinaryReader readStream);
+        internal abstract void SkipTag(NbtBinaryReader readStream);
 
-        internal abstract void WriteTag([NotNull] NbtBinaryWriter writeReader);
+        internal abstract void WriteTag(NbtBinaryWriter writeReader);
 
         // WriteData does not write the tag's ID byte or the name
-        internal abstract void WriteData([NotNull] NbtBinaryWriter writeReader);
+        internal abstract void WriteData(NbtBinaryWriter writeStream);
 
 
         #region Shortcuts
@@ -95,7 +88,7 @@ namespace fNbt {
         /// <exception cref="InvalidOperationException"> If used on a tag that is not NbtCompound. </exception>
         /// <remarks> ONLY APPLICABLE TO NbtCompound OBJECTS!
         /// Included in NbtTag base class for programmers' convenience, to avoid extra type casts. </remarks>
-        public virtual NbtTag this[string tagName] {
+        public virtual NbtTag? this[string tagName] {
             get { throw new InvalidOperationException("String indexers only work on NbtCompound tags."); }
             set { throw new InvalidOperationException("String indexers only work on NbtCompound tags."); }
         }
@@ -253,26 +246,24 @@ namespace fNbt {
                     throw new InvalidCastException("Cannot get IntArrayValue from " + GetCanonicalTagName(TagType));
                 }
             }
-		}
+        }
 
-	    /// <summary> Returns the value of this tag, cast as an long array.
-		/// Only supported by NbtLongArray tags. </summary>
-		/// <exception cref="InvalidCastException"> When used on a tag other than NbtLongArray. </exception>
-	    public long[] LongArrayValue
-	    {
-		    get
-		    {
-			    if (TagType == NbtTagType.LongArray) {
-				    return ((NbtLongArray)this).Value;
-			    } else {
-				    throw new InvalidCastException("Cannot get LongArrayValue from " + GetCanonicalTagName(TagType));
-			    }
-		    }
-	    }
+        /// <summary> Returns the value of this tag, cast as a long array.
+        /// Only supported by NbtLongArray tags. </summary>
+        /// <exception cref="InvalidCastException"> When used on a tag other than NbtLongArray. </exception>
+        public long[] LongArrayValue {
+            get {
+                if (TagType == NbtTagType.LongArray) {
+                    return ((NbtLongArray)this).Value;
+                } else {
+                    throw new InvalidCastException("Cannot get LongArrayValue from " + GetCanonicalTagName(TagType));
+                }
+            }
+        }
 
-	    /// <summary> Returns the value of this tag, cast as a string.
+        /// <summary> Returns the value of this tag, cast as a string.
         /// Returns exact value for NbtString, and stringified (using InvariantCulture) value for NbtByte, NbtDouble, NbtFloat, NbtInt, NbtLong, and NbtShort.
-        /// Not supported by NbtCompound, NbtList, NbtByteArray, or NbtIntArray. </summary>
+        /// Not supported by NbtCompound, NbtList, NbtByteArray, NbtIntArray, or NbtLongArray. </summary>
         /// <exception cref="InvalidCastException"> When used on an unsupported tag. </exception>
         public string StringValue {
             get {
@@ -305,38 +296,23 @@ namespace fNbt {
         /// <param name="type"> NbtTagType to name. </param>
         /// <returns> String representing the canonical name of a tag,
         /// or null of given TagType does not have a canonical name (e.g. Unknown). </returns>
-        [CanBeNull]
-        public static string GetCanonicalTagName(NbtTagType type) {
-            switch (type) {
-                case NbtTagType.Byte:
-                    return "TAG_Byte";
-                case NbtTagType.ByteArray:
-                    return "TAG_Byte_Array";
-                case NbtTagType.Compound:
-                    return "TAG_Compound";
-                case NbtTagType.Double:
-                    return "TAG_Double";
-                case NbtTagType.End:
-                    return "TAG_End";
-                case NbtTagType.Float:
-                    return "TAG_Float";
-                case NbtTagType.Int:
-                    return "TAG_Int";
-                case NbtTagType.IntArray:
-                    return "TAG_Int_Array";
-				case NbtTagType.LongArray:
-					return "TAG_Long_Array";
-                case NbtTagType.List:
-                    return "TAG_List";
-                case NbtTagType.Long:
-                    return "TAG_Long";
-                case NbtTagType.Short:
-                    return "TAG_Short";
-                case NbtTagType.String:
-                    return "TAG_String";
-                default:
-                    return null;
-            }
+        public static string? GetCanonicalTagName(NbtTagType type) {
+            return type switch {
+                NbtTagType.Byte => "TAG_Byte",
+                NbtTagType.ByteArray => "TAG_Byte_Array",
+                NbtTagType.Compound => "TAG_Compound",
+                NbtTagType.Double => "TAG_Double",
+                NbtTagType.End => "TAG_End",
+                NbtTagType.Float => "TAG_Float",
+                NbtTagType.Int => "TAG_Int",
+                NbtTagType.IntArray => "TAG_Int_Array",
+                NbtTagType.LongArray => "TAG_Long_Array",
+                NbtTagType.List => "TAG_List",
+                NbtTagType.Long => "TAG_Long",
+                NbtTagType.Short => "TAG_Short",
+                NbtTagType.String => "TAG_String",
+                _ => null,
+            };
         }
 
 
@@ -358,94 +334,24 @@ namespace fNbt {
         /// <param name="indentString"> String to be used for indentation. </param>
         /// <returns> A string representing contents of this tag, and all child tags (if any). </returns>
         /// <exception cref="ArgumentNullException"> <paramref name="indentString"/> is <c>null</c>. </exception>
-        [NotNull]
-        public string ToString([NotNull] string indentString) {
-            if (indentString == null) throw new ArgumentNullException("indentString");
+        public string ToString(string indentString) {
+            if (indentString == null) throw new ArgumentNullException(nameof(indentString));
             var sb = new StringBuilder();
             PrettyPrint(sb, indentString, 0);
             return sb.ToString();
         }
 
 
-        internal abstract void PrettyPrint([NotNull] StringBuilder sb, [NotNull] string indentString, int indentLevel);
+        internal abstract void PrettyPrint(StringBuilder sb, string indentString, int indentLevel);
 
         /// <summary> String to use for indentation in NbtTag's and NbtFile's ToString() methods by default. </summary>
         /// <exception cref="ArgumentNullException"> <paramref name="value"/> is <c>null</c>. </exception>
-        [NotNull]
         public static string DefaultIndentString {
             get { return defaultIndentString; }
             set {
-                if (value == null) throw new ArgumentNullException("value");
+                if (value == null) throw new ArgumentNullException(nameof(value));
                 defaultIndentString = value;
             }
-        }
-
-        internal static NbtTag ReadUnknownTag(NbtBinaryReader readStream)
-        {
-            NbtTagType nextTag = readStream.ReadTagType();
-            NbtTag newTag;
-            switch (nextTag) {
-                case NbtTagType.End:
-                    throw new EndOfStreamException();
-
-                //case NbtTagType.Byte:
-                //    newTag = new NbtByte();
-                //    break;
-
-                //case NbtTagType.Short:
-                //    newTag = new NbtShort();
-                //    break;
-
-                //case NbtTagType.Int:
-                //    newTag = new NbtInt();
-                //    break;
-
-                //case NbtTagType.Long:
-                //    newTag = new NbtLong();
-                //    break;
-
-                //case NbtTagType.Float:
-                //    newTag = new NbtFloat();
-                //    break;
-
-                //case NbtTagType.Double:
-                //    newTag = new NbtDouble();
-                //    break;
-
-                //case NbtTagType.ByteArray:
-                //    newTag = new NbtByteArray();
-                //    break;
-
-                //case NbtTagType.String:
-                //    newTag = new NbtString();
-                //    break;
-
-                case NbtTagType.List:
-                    newTag = new NbtList();
-                    break;
-
-                case NbtTagType.Compound:
-                    newTag = new NbtCompound();
-                    break;
-
-                //case NbtTagType.IntArray:
-                //    newTag = new NbtIntArray();
-                //    break;
-
-                //case NbtTagType.LongArray:
-                //    newTag = new NbtLongArray();
-                //    break;
-
-                default:
-                    throw new NbtFormatException("Unsupported tag type found in NBT_Tag: " + nextTag);
-            }
-
-            newTag.Name = readStream.ReadString();
-            if (newTag.ReadTag(readStream)) {
-                return newTag;
-            }
-
-            throw new NbtFormatException("Given NBT stream does not start with a proper TAG");
         }
 
         static string defaultIndentString = "  ";

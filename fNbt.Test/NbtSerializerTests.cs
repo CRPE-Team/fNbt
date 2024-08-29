@@ -1,208 +1,475 @@
-﻿using fNbt.Serialization;
-using NUnit.Framework;
-using System;
+﻿using System;
+using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using fNbt.Serialization;
+using fNbt.Serialization.Converters;
+using fNbt.Serialization.Handlings;
+using NUnit.Framework;
 
-namespace fNbt.Test
-{
-	[TestFixture]
-	public sealed class NbtSerializerTests
-	{
-		[Test]
-		public void BuildFromTagTest()
-		{
-			CheckFromTag(false);
-		}
+namespace fNbt.Test {
+    [TestFixture]
+    public sealed class NbtSerializerTests {
+        public class TestObject {
+            public byte TestByte { get; set; }
+            public byte? TestNullableByte { get; set; }
 
-		[Test]
-		public void FillFromTagTest()
-		{
-			CheckFromTag(true);
-		}
+            public short TestShort { get; set; }
+            public short? TestNullableShort { get; set; }
 
-		[Test]
-		public void FillTest()
-		{
-			var valuesSet = new List<string>() { "testVal1", "test_val_2", "TestVal3", "TEST_VAL_4" };
+            public int TestInt { get; set; }
+            public int? TestNullableInt { get; set; }
 
-			var original = new FillTestClass();
-			original.GetOnlyTestStringList.AddRange(valuesSet);
-			original.GetOnlyTestClassProperty.EasyIntProperty = 321;
-			original.GetOnlyTestClassProperty.EasyStringProperty = "ESP_TEST_FILL";
+            public long TestLong { get; set; }
+            public long? TestNullableLong { get; set; }
 
-			var tag = NbtSerializer.SerializeObject(original);
+            [NbtProperty("test_float")]
+            public float TestFloat { get; set; }
+            public float? TestNullableFloat { get; set; }
 
-			var result = NbtSerializer.DeserializeObject<FillTestClass>(tag);
+            public double TestDouble { get; set; }
+            public double? TestNullableDouble { get; set; }
 
-			Assert.IsNotNull(result);
+            public byte[] TestByteArray { get; set; }
 
-			Assert.AreEqual(original.GetOnlyTestClassProperty.EasyIntProperty, result.GetOnlyTestClassProperty.EasyIntProperty);
-			Assert.AreEqual(original.GetOnlyTestClassProperty.EasyStringProperty, result.GetOnlyTestClassProperty.EasyStringProperty);
-			CollectionAssert.AreEquivalent(original.GetOnlyTestStringList, result.GetOnlyTestStringList);
-		}
+            public int[] TestIntArray { get; set; }
 
-		[Test]
-		public void FieldsAndPropertiesTest()
-		{
-			var raw = new FieldsAndPropertiesTestClass();
-			var tag = NbtSerializer.SerializeObject(raw);
+            public long[] TestLongArray { get; set; }
 
-			Assert.IsNotNull(tag);
+            public SubObject TestSubObj {  get; set; }
 
-			Assert.IsFalse(tag.Contains(nameof(raw.HidenTestIntFiled)));
-			Assert.IsFalse(tag.Contains(nameof(raw.HidenDefaultTestIntFiled)));
+            public Dictionary<string, SubObject> TestDictionary { get; set; }
 
-			Assert.IsFalse(tag.Contains(nameof(raw.HidenTestIntProperty)));
-			Assert.IsFalse(tag.Contains(nameof(raw.HidenDefaultTestIntProperty)));
+            public List<SubObject> TestList { get; set; }
 
-			AssertTagValue<NbtInt>(tag, nameof(raw.DefaultTestIntFiled), raw.DefaultTestIntFiled, t => t.Value);
-			AssertTagValue<NbtInt>(tag, nameof(raw.TestIntFiled), raw.TestIntFiled, t => t.Value);
-			AssertTagValue<NbtInt>(tag, "PrivateTestIntFiled", 3, t => t.Value);
-			AssertTagValue<NbtInt>(tag, FieldsAndPropertiesTestClass.NameForNamedTestIndFiled, raw.NamedTestIntFiled, t => t.Value);
+            public SubObject[] TestArray { get; set; }
 
-			AssertTagValue<NbtInt>(tag, nameof(raw.DefaultTestIntProperty), raw.DefaultTestIntProperty, t => t.Value);
-			AssertTagValue<NbtInt>(tag, nameof(raw.TestIntProperty), raw.TestIntProperty, t => t.Value);
-			AssertTagValue<NbtInt>(tag, nameof(raw.OnlyGetTestIntProperty), raw.OnlyGetTestIntProperty, t => t.Value);
-			AssertTagValue<NbtInt>(tag, "PrivateTestIntProperty", 8, t => t.Value);
-			AssertTagValue<NbtInt>(tag, FieldsAndPropertiesTestClass.NameForNamedTestIndProperty, raw.NamedTestIntProperty, t => t.Value);
-		}
+            public ObjEnum TestEnum { get; set; }
 
-		[Test]
-		public void TypesTest()
-		{
-			var raw = new TypesTestClass();
-			var tag = NbtSerializer.SerializeObject(raw);
-			var deserialized = NbtSerializer.DeserializeObject<TypesTestClass>(tag);
+            [NbtProperty(typeof(EnumNbtConverter))]
+            public ObjEnum TestStringEnum { get; set; }
 
-			Assert.IsNotNull(tag);
+            public ObjEnum? TestNullableEnum { get; set; }
 
-			Assert.AreEqual(raw.BoolFalseTestProperty, deserialized.BoolFalseTestProperty);
-			Assert.AreEqual(raw.BoolTrueTestProperty, deserialized.BoolTrueTestProperty);
-			Assert.AreEqual(raw.ByteArrayTestProperty, deserialized.ByteArrayTestProperty);
-			Assert.AreEqual(raw.IntArrayTestProperty, deserialized.IntArrayTestProperty);
-			Assert.AreEqual(raw.ByteTestProperty, deserialized.ByteTestProperty);
-			Assert.AreEqual(raw.SByteTestProperty, deserialized.SByteTestProperty);
-			Assert.AreEqual(raw.ShortTestProperty, deserialized.ShortTestProperty);
-			Assert.AreEqual(raw.UShortTestProperty, deserialized.UShortTestProperty);
-			Assert.AreEqual(raw.IntTestProperty, deserialized.IntTestProperty);
-			Assert.AreEqual(raw.UIntTestProperty, deserialized.UIntTestProperty);
-			Assert.AreEqual(raw.LongTestProperty, deserialized.LongTestProperty);
-			Assert.AreEqual(raw.ULongTestProperty, deserialized.ULongTestProperty);
+            public class SubObject {
+                public string TestSubString { get; set; }
 
-			Assert.AreEqual(raw.NbtIntProperty.Value, deserialized.NbtIntProperty.Value);
+                public override bool Equals(object obj) {
+                    return obj is SubObject @object &&
+                           TestSubString == @object.TestSubString;
+                }
 
-			AssertTagValue<NbtByte>(tag, nameof(raw.BoolFalseTestProperty), raw.BoolFalseTestProperty, t => Convert.ToBoolean(t.Value));
-			AssertTagValue<NbtByte>(tag, nameof(raw.BoolTrueTestProperty), raw.BoolTrueTestProperty, t => Convert.ToBoolean(t.Value));
-			AssertTagValue<NbtByteArray>(tag, nameof(raw.ByteArrayTestProperty), raw.ByteArrayTestProperty, t => t.Value);
-			AssertTagValue<NbtIntArray>(tag, nameof(raw.IntArrayTestProperty), raw.IntArrayTestProperty, t => t.Value);
-			AssertTagValue<NbtByte>(tag, nameof(raw.ByteTestProperty), raw.ByteTestProperty, t => t.Value);
-			AssertTagValue<NbtByte>(tag, nameof(raw.SByteTestProperty), raw.SByteTestProperty, t => (sbyte)t.Value);
-			AssertTagValue<NbtShort>(tag, nameof(raw.ShortTestProperty), raw.ShortTestProperty, t => t.Value);
-			AssertTagValue<NbtShort>(tag, nameof(raw.UShortTestProperty), raw.UShortTestProperty, t => (ushort)t.Value);
-			AssertTagValue<NbtInt>(tag, nameof(raw.IntTestProperty), raw.IntTestProperty, t => t.Value);
-			AssertTagValue<NbtInt>(tag, nameof(raw.UIntTestProperty), raw.UIntTestProperty, t => (uint)t.Value);
-			AssertTagValue<NbtLong>(tag, nameof(raw.LongTestProperty), raw.LongTestProperty, t => t.Value);
-			AssertTagValue<NbtLong>(tag, nameof(raw.ULongTestProperty), raw.ULongTestProperty, t => (ulong)t.Value);
+                public override int GetHashCode() {
+                    return HashCode.Combine(TestSubString);
+                }
+            }
 
-			AssertTagValue<NbtInt>(tag, nameof(raw.NbtIntProperty), raw.NbtIntProperty.Value, t => t.Value);
-		}
+            public static TestObject Create() {
+                return new TestObject() {
+                    TestByte = 131,
+                    TestNullableByte = 132,
+                    TestShort = 13141,
+                    TestNullableShort = 13142,
+                    TestInt = 131412,
+                    TestNullableInt = 131413,
+                    TestLong = 13141231212,
+                    TestNullableLong = 13141231213,
+                    TestFloat = 123.21f,
+                    TestNullableFloat = 123.22f,
+                    TestDouble = 124.21,
+                    TestNullableDouble = 124.22,
+                    TestEnum = ObjEnum.First,
+                    TestStringEnum = ObjEnum.Third,
+                    TestNullableEnum = ObjEnum.Second,
+                    TestByteArray = new byte[] { 14, 2, 121 },
+                    TestIntArray = new int[] { 15, 3, 122 },
+                    TestLongArray = new long[] { 16, 4, 123 },
+                    TestSubObj = new TestObject.SubObject() { TestSubString = "test value" },
+                    TestDictionary = new Dictionary<string, TestObject.SubObject>() {
+                        { "test key 0", new TestObject.SubObject() { TestSubString = "test value" } },
+                        { "test key 1", new TestObject.SubObject() { TestSubString = "test new value" } }
+                    },
+                    TestList = new List<TestObject.SubObject>() {
+                        new TestObject.SubObject() { TestSubString = "test ls val" }
+                    },
+                    TestArray = new TestObject.SubObject[] {
+                        new TestObject.SubObject() { TestSubString = "test ar val" }
+                    }
+                };
+            }
 
-		private void CheckFromTag(bool fill)
-		{
-			var stringValue = "test_string_value_rv";
-			var intValue = 882882;
+            public override bool Equals(object obj) {
+                return obj is TestObject @object &&
+                       TestByte == @object.TestByte &&
+                       TestNullableByte == @object.TestNullableByte &&
+                       TestShort == @object.TestShort &&
+                       TestNullableShort == @object.TestNullableShort &&
+                       TestInt == @object.TestInt &&
+                       TestNullableInt == @object.TestNullableInt &&
+                       TestLong == @object.TestLong &&
+                       TestNullableLong == @object.TestNullableLong &&
+                       TestFloat == @object.TestFloat &&
+                       TestNullableFloat == @object.TestNullableFloat &&
+                       TestDouble == @object.TestDouble &&
+                       TestNullableDouble == @object.TestNullableDouble &&
+                       TestEnum == @object.TestEnum &&
+                       TestStringEnum == @object.TestStringEnum &&
+                       TestNullableEnum == @object.TestNullableEnum &&
+                       (TestByteArray == @object.TestByteArray || (TestByteArray != null && TestByteArray.SequenceEqual(@object.TestByteArray))) &&
+                       (TestIntArray == @object.TestIntArray || (TestIntArray != null && TestIntArray.SequenceEqual(@object.TestIntArray))) &&
+                       (TestLongArray == @object.TestLongArray || (TestLongArray != null && TestLongArray.SequenceEqual(@object.TestLongArray))) &&
+                       EqualityComparer<SubObject>.Default.Equals(TestSubObj, @object.TestSubObj) &&
+                       (TestDictionary == @object.TestDictionary || (TestDictionary != null && TestDictionary.SequenceEqual(@object.TestDictionary))) &&
+                       (TestList == @object.TestList || (TestList != null && TestList.SequenceEqual(@object.TestList)));
+            }
 
-			var shadow = new EasyTestClass();
+            public override int GetHashCode() {
+                HashCode hash = new HashCode();
+                hash.Add(TestByte);
+                hash.Add(TestNullableByte);
+                hash.Add(TestShort);
+                hash.Add(TestNullableShort);
+                hash.Add(TestInt);
+                hash.Add(TestNullableInt);
+                hash.Add(TestLong);
+                hash.Add(TestNullableLong);
+                hash.Add(TestFloat);
+                hash.Add(TestNullableFloat);
+                hash.Add(TestDouble);
+                hash.Add(TestNullableDouble);
+                hash.Add(TestEnum);
+                hash.Add(TestStringEnum);
+                hash.Add(TestNullableEnum);
+                hash.Add(TestByteArray);
+                hash.Add(TestIntArray);
+                hash.Add(TestLongArray);
+                hash.Add(TestSubObj);
+                hash.Add(TestDictionary);
+                hash.Add(TestList);
+                hash.Add(TestArray);
+                return hash.ToHashCode();
+            }
 
-			var tag = new NbtCompound();
-			tag.Add(new NbtString(nameof(shadow.EasyStringProperty), stringValue));
-			tag.Add(new NbtInt(nameof(shadow.EasyIntProperty), intValue));
+            public enum ObjEnum {
+                None = 0,
+                First = 1,
+                Second = 2,
+                Third = 3,
+            }
+        }
 
-			EasyTestClass result = null;
+        public class LoopObject {
+            public LoopObject Loop { get; set; }
 
-			if (fill)
-			{
-				result = shadow;
-				NbtSerializer.FillObject(result, tag);
-			}
-			else
-			{
-				result = NbtSerializer.DeserializeObject<EasyTestClass>(tag);
-			}
+            public object Loop2 { get; set; }
 
-			Assert.IsNotNull(result);
+            public string TestString { get; set; }
+        }
 
-			Assert.AreEqual(stringValue, result.EasyStringProperty);
-			Assert.AreEqual(intValue, result.EasyIntProperty);
-		}
+        public class OneMemberObject {
 
-		private void AssertTagValue<TExpected>(NbtCompound parentTag, string expectedTagName, object expectedValue, Func<TExpected, object> getValue) where TExpected : NbtTag
-		{
-			Assert.True(parentTag.TryGet(expectedTagName, out NbtTag tag), 
-				$"expected tag [{expectedTagName}] is not contains.");
+            public string TestString { get; set; }
+        }
 
-			Assert.IsAssignableFrom<TExpected>(tag, 
-				$"actual tag type is [{tag.GetType()}], but expected [{typeof(TExpected)}]");
+        public class TwoMembersObject {
 
-			var actual = getValue((TExpected)tag);
-			Assert.AreEqual(expectedValue, actual);
-		}
+            public string TestString { get; set; }
 
-		#region test classes
+            public string TestString2 { get; set; }
+        }
 
-		public class FillTestClass
-		{
-			[NbtProperty] public List<string> GetOnlyTestStringList { get; } = new List<string>();
-			[NbtProperty] public EasyTestClass GetOnlyTestClassProperty { get; } = new EasyTestClass();
-		}
+        [Test]
+        public void MissingMemberDeserializationTest() {
+            var obj = new TwoMembersObject() {
+                TestString = "test val",
+                TestString2 = "test val 2"
+            };
 
-		public class EasyTestClass
-		{
-			[NbtProperty] public string EasyStringProperty { get; set; } = "easy property value";
-			[NbtProperty] public int EasyIntProperty { get; set; } = 123456789;
-		}
+            var stream = new MemoryStream();
+            NbtSerializer.Write(obj, stream);
+            stream.Position = 0;
 
-		public class TypesTestClass
-		{
-			[NbtProperty(hideDefault: false)] public bool BoolFalseTestProperty { get; set; } = false;
-			[NbtProperty] public bool BoolTrueTestProperty { get; set; } = true;
-			[NbtProperty] public byte[] ByteArrayTestProperty { get; set; } = new byte[] { 1, 2, 3, 4 };
-			[NbtProperty] public int[] IntArrayTestProperty { get; set; } = new int[] { 5, 6, 7, 8 };
-			[NbtProperty] public byte ByteTestProperty { get; set; } = 1;
-			[NbtProperty] public sbyte SByteTestProperty { get; set; } = 2;
-			[NbtProperty] public short ShortTestProperty { get; set; } = 3;
-			[NbtProperty] public ushort UShortTestProperty { get; set; } = 4;
-			[NbtProperty] public int IntTestProperty { get; set; } = 5;
-			[NbtProperty] public uint UIntTestProperty { get; set; } = 6;
-			[NbtProperty] public ulong LongTestProperty { get; set; } = 7;
-			[NbtProperty] public ulong ULongTestProperty { get; set; } = 8;
+            Assert.Throws<NbtSerializationException>(() => NbtSerializer.Read<OneMemberObject>(stream));
+        }
 
-			[NbtProperty] public NbtInt NbtIntProperty { get; set; } = new NbtInt(100);
-		}
+        [Test]
+        public void MissingMemberIgnoreDeserializationTest() {
+            var obj = new TwoMembersObject() {
+                TestString = "test val",
+                TestString2 = "test val 2"
+            };
 
-		public class FieldsAndPropertiesTestClass
-		{
-			public int HidenTestIntFiled = 1;
-			[NbtProperty] public int HidenDefaultTestIntFiled = 0;
-			[NbtProperty(hideDefault: false)] public int DefaultTestIntFiled = 0;
-			[NbtProperty] public int TestIntFiled = 2;
+            var stream = new MemoryStream();
+            NbtSerializer.Write(obj, stream);
+            stream.Position = 0;
 
-			[NbtProperty] private int PrivateTestIntFiled = 3;
+            var newObj = NbtSerializer.Read<OneMemberObject>(stream, new NbtSerializerSettings() { 
+                MissingMemberHandling = MissingMemberHandling.Ignore 
+            });
 
-			public const string NameForNamedTestIndFiled = "named_test_int_field";
-			[NbtProperty(NameForNamedTestIndFiled)] public int NamedTestIntFiled = 4;
+            Assert.AreEqual(obj.TestString, newObj.TestString);
+        }
 
-			public int HidenTestIntProperty { get; set; } = 5;
-			[NbtProperty] public int HidenDefaultTestIntProperty { get; set; } = 0;
-			[NbtProperty(hideDefault: false)] public int DefaultTestIntProperty { get; set; } = 0;
-			[NbtProperty] public int TestIntProperty { get; set; } = 6;
-			[NbtProperty] public int OnlyGetTestIntProperty { get; } = 7;
-			[NbtProperty] private int PrivateTestIntProperty { get; set; } = 8;
+        [Test]
+        public void LoopReferenceIgnoreSerializationTest() {
+            var obj = new LoopObject() {
+                TestString = "test val"
+            };
 
-			public const string NameForNamedTestIndProperty = "named_test_int_property";
-			[NbtProperty(NameForNamedTestIndProperty)] public int NamedTestIntProperty { get; set; } = 9;
-		}
+            obj.Loop = obj;
+            obj.Loop2 = obj;
 
-		#endregion
-	}
+            var stream = new MemoryStream();
+
+            NbtSerializer.Write(obj, stream, new NbtSerializerSettings() {
+                NullReferenceHandling = NullReferenceHandling.Ignore,
+                LoopReferenceHandling = LoopReferenceHandling.Ignore
+            });
+            stream.Position = 0;
+
+            var newObj = NbtSerializer.Read<LoopObject>(stream);
+
+            Assert.AreEqual(obj.TestString, newObj.TestString);
+            Assert.IsNull(newObj.Loop);
+            Assert.IsNull(newObj.Loop2);
+        }
+
+        [Test]
+        public void LoopReferenceSerializationTest() {
+            var obj = new LoopObject() {
+                TestString = "test val",
+                Loop = new LoopObject() { TestString = "test val 2" },
+                Loop2 = new LoopObject() { TestString = "test val 3" },
+            };
+            var stream = new MemoryStream();
+
+            NbtSerializer.Write(obj, stream, new NbtSerializerSettings() { NullReferenceHandling = NullReferenceHandling.Ignore });
+            stream.Position = 0;
+
+            obj.Loop = obj;
+
+            Assert.Throws<NbtSerializationException>(
+                () => NbtSerializer.Write(obj, stream, new NbtSerializerSettings() { NullReferenceHandling = NullReferenceHandling.Ignore }));
+            stream.Position = 0;
+
+            obj.Loop = null;
+            obj.Loop2 = obj;
+
+            Assert.Throws<NbtSerializationException>(
+                () => NbtSerializer.Write(obj, stream, new NbtSerializerSettings() { NullReferenceHandling = NullReferenceHandling.Ignore }));
+        }
+
+        [Test]
+        public void ObjectDefaultsSerializationTest() {
+            var obj = new TestObject() {
+                TestInt = 1,
+                TestByte = 2
+            };
+
+            var stream = new MemoryStream();
+
+            NbtSerializer.Write(obj, stream, new NbtSerializerSettings() { NullReferenceHandling = NullReferenceHandling.Ignore });
+            stream.Position = 0;
+
+            var file = new NbtFile();
+            file.LoadFromStream(stream, NbtCompression.None);
+            stream.Position = 0;
+
+            var newObj = NbtSerializer.Read<TestObject>(stream);
+
+            Assert.AreEqual(obj, newObj);
+        }
+
+        [Test]
+        public void ObjectCollectionDefaultsSerializationTest() {
+            var obj = new TestObject() {
+                TestDictionary = new Dictionary<string, TestObject.SubObject>() {
+                    { "null", null },
+                    { "test key 1", new TestObject.SubObject() { TestSubString = "test new value" } }
+                },
+                TestList = new List<TestObject.SubObject>() {
+                    new TestObject.SubObject() { TestSubString = "test ls val" }
+                },
+                TestArray = new TestObject.SubObject[] {
+                    new TestObject.SubObject() { TestSubString = "test ar val" }
+                }
+            };
+
+            var stream = new MemoryStream();
+
+            NbtSerializer.Write(obj, stream, new NbtSerializerSettings() { NullReferenceHandling = NullReferenceHandling.Ignore });
+            stream.Position = 0;
+
+            var file = new NbtFile();
+            file.LoadFromStream(stream, NbtCompression.None);
+            stream.Position = 0;
+
+            var newObj = NbtSerializer.Read<TestObject>(stream);
+
+            obj.TestDictionary.Remove("null");
+
+            Assert.AreEqual(obj, newObj);
+        }
+
+        [Test]
+        public void ObjectSerializationTest() {
+            var obj = TestObject.Create();
+
+            var stream = new MemoryStream();
+
+            NbtSerializer.Write(obj, stream);
+            stream.Position = 0;
+            NbtSerializer.Write(obj, stream);
+            stream.Position = 0;
+            NbtSerializer.Write(obj, stream);
+            stream.Position = 0;
+
+            var file = new NbtFile();
+            file.LoadFromStream(stream, NbtCompression.None);
+            stream.Position = 0;
+
+            var newObj = NbtSerializer.Read<TestObject>(stream);
+
+            Assert.AreEqual((int)obj.TestEnum, file.RootTag[nameof(TestObject.TestEnum)].IntValue);
+            Assert.AreEqual(obj.TestStringEnum.ToString(), file.RootTag[nameof(TestObject.TestStringEnum)].StringValue);
+            Assert.AreEqual(obj, newObj);
+        }
+
+        [Test]
+        public void ObjectDefaultsConvertTest() {
+            var obj = new TestObject() {
+                TestInt = 1,
+                TestByte = 2,
+                TestNullableByte = 3,
+            };
+
+            var tag = NbtConvert.ToNbt(obj, new NbtSerializerSettings() { NullReferenceHandling = NullReferenceHandling.Ignore });
+            var newObj = NbtConvert.FromNbt<TestObject>(tag);
+
+            Assert.AreEqual(obj, newObj);
+        }
+
+        [Test]
+        public void ObjectConvertTest() {
+            var obj = TestObject.Create();
+
+            var tag = NbtConvert.ToNbt(obj);
+            var newObj = NbtConvert.FromNbt<TestObject>(tag);
+
+            Assert.AreEqual(obj, newObj);
+        }
+
+        [Test]
+        public void ByteDeserializeTest() {
+            BaseConverterTest(new NbtByte("test", 14), (byte)14, new ByteNbtConverter());
+        }
+
+        [Test]
+        public void ShortDeserializeTest() {
+            BaseConverterTest(new NbtShort("test", 14), (short)14, new ShortNbtConverter());
+        }
+
+        [Test]
+        public void IntDeserializeTest() {
+            BaseConverterTest(new NbtInt("test", 141231), 141231, new IntNbtConverter());
+        }
+
+        [Test]
+        public void LongDeserializeTest() {
+            BaseConverterTest(new NbtLong("test", 14123112312), 14123112312, new LongNbtConverter());
+        }
+
+        [Test]
+        public void StringDeserializeTest() {
+            BaseConverterTest(new NbtString("test", "value"), "value", new StringNbtConverter());
+        }
+
+        [Test]
+        public void DoubleDeserializeTest() {
+            BaseConverterTest(new NbtDouble("test", 1.1233), 1.1233, new DoubleNbtConverter());
+        }
+
+        [Test]
+        public void FloatDeserializeTest() {
+            BaseConverterTest(new NbtFloat("test", 1.1233f), 1.1233f, new FloatNbtConverter());
+        }
+
+        [Test]
+        public void ByteArrayDeserializeTest() {
+            var value = new byte[] { 1, 41, 66 };
+
+            BaseConverterTest(new NbtByteArray("test", value), value, new ByteArrayNbtConverter());
+        }
+
+        [Test]
+        public void IntArrayDeserializeTest() {
+            var value = new int[] { 1920874, 1, -1184931 };
+
+            BaseConverterTest(new NbtIntArray("test", value), value, new IntArrayNbtConverter());
+        }
+
+        [Test]
+        public void LongArrayDeserializeTest() {
+            var value = new long[] { 192087411, 1, -1184911231 };
+
+            BaseConverterTest(new NbtLongArray("test", value), value, new LongArrayNbtConverter());
+        }
+
+        [Test]
+        public void ListDeserializeTest() {
+            var list = new List<int[]>() {
+                new int[] { 1, 951, -141 },
+                new int[0],
+                new int[] { 23, -314, 6551, 1123, 31 },
+                new int[] { 9192 }
+            };
+
+            var nbtList = new NbtList("test", NbtTagType.IntArray);
+            foreach (var i in list) {
+                nbtList.Add(new NbtIntArray(i));
+            }
+
+            var converter = new ListNbtConverter() {
+                ElementSerializationCache = CreateSerializationCache(new IntArrayNbtConverter(), typeof(int[]))
+            };
+
+            var dict = BaseDeserialization(nbtList, list.GetType(), converter);
+
+            var val = (IList) dict[nbtList.Name];
+            CollectionAssert.AreEquivalent(list, val);
+        }
+
+        private void BaseConverterTest(NbtTag tag, object value, NbtConverter converter) {
+            var dict = BaseDeserialization(tag, value.GetType(), converter);
+
+            var val = dict[tag.Name];
+
+            Assert.AreEqual(value, val);
+        }
+
+        private IDictionary BaseDeserialization(NbtTag tag, Type type, NbtConverter converter) {
+            var stream = new MemoryStream();
+
+            var file = new NbtFile() {
+                Flavor = NbtFlavor.Default,
+                RootTag = new NbtCompound(tag.Name + "_root") { tag }
+            }.SaveToStream(stream, NbtCompression.None);
+            stream.Position = 0;
+
+            var intCache = CreateSerializationCache(converter, type);
+            var dictCache = CreateSerializationCache(new DictionaryNbtConverter() { ElementSerializationCache = intCache },
+                typeof(Dictionary<,>).MakeGenericType(typeof(string), type));
+
+            return (IDictionary)dictCache.Read(new NbtBinaryReader(stream, NbtFlavor.Default));
+        }
+
+        private NbtSerializationCache CreateSerializationCache(NbtConverter converter, Type type) {
+            return new NbtSerializationCache() {
+                Converter = converter,
+                Settings = NbtSerializer.DefaultSettings,
+                Type = type
+            };
+        }
+    }
 }

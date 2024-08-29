@@ -1,16 +1,19 @@
 ﻿using System;
 using System.IO;
-using JetBrains.Annotations;
 
 namespace fNbt.Test {
     class PartialReadStream : Stream {
-        readonly byte[] placeholderBuffer = new byte[1];
         readonly Stream baseStream;
+        readonly int increment;
+
+        public PartialReadStream(Stream baseStream)
+            : this(baseStream, 1) { }
 
 
-        public PartialReadStream([NotNull] Stream baseStream) {
-            if (baseStream == null) throw new ArgumentNullException("baseStream");
+        public PartialReadStream(Stream baseStream, int increment) {
+            if (baseStream == null) throw new ArgumentNullException(nameof(baseStream));
             this.baseStream = baseStream;
+            this.increment = increment;
         }
 
 
@@ -30,13 +33,8 @@ namespace fNbt.Test {
 
 
         public override int Read(byte[] buffer, int offset, int count) {
-            int rv = baseStream.Read(placeholderBuffer, 0, 1);
-            if (rv <= 0) {
-                return rv;
-            } else {
-                buffer[offset] = placeholderBuffer[0];
-                return 1;
-            }
+            int bytesToRead = Math.Min(increment, count);
+            return baseStream.Read(buffer, offset, bytesToRead);
         }
 
 
@@ -63,7 +61,7 @@ namespace fNbt.Test {
 
         public override long Position {
             get { return baseStream.Position; }
-            set { baseStream.Position= value; }
+            set { baseStream.Position = value; }
         }
     }
 }

@@ -149,9 +149,8 @@ namespace fNbt.Test {
 
 
         void ReloadFileInternal(String fileName, NbtCompression compression, bool bigEndian, bool buffered) {
-            var loadedFile = new NbtFile(Path.Combine(TestFiles.DirName, fileName)) {
-                BigEndian = bigEndian
-            };
+            var loadedFile = new NbtFile(Path.Combine(TestFiles.DirName, fileName));
+            loadedFile.Flavor = new NbtFlavor(bigEndian); // Change after loading
             if (!buffered) {
                 loadedFile.BufferSize = 0;
             }
@@ -232,17 +231,18 @@ namespace fNbt.Test {
 
 
         void ReadRootTagInternal(String fileName, NbtCompression compression) {
-            Assert.Throws<ArgumentOutOfRangeException>(() => NbtFile.ReadRootTagName(fileName, compression, true, -1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => NbtFile.ReadRootTagName(fileName, compression, NbtFlavor.Default, -1));
+            Assert.Throws<ArgumentOutOfRangeException>(() => NbtFile.ReadRootTagName(fileName, (NbtCompression)255, NbtFlavor.Default, 0));
 
             Assert.AreEqual("Level", NbtFile.ReadRootTagName(fileName));
-            Assert.AreEqual("Level", NbtFile.ReadRootTagName(fileName, compression, true, 0));
+            Assert.AreEqual("Level", NbtFile.ReadRootTagName(fileName, compression, NbtFlavor.Default, 0));
 
             byte[] fileBytes = File.ReadAllBytes(fileName);
             using (var ms = new MemoryStream(fileBytes)) {
                 using (var nss = new NonSeekableStream(ms)) {
                     Assert.Throws<ArgumentOutOfRangeException>(
-                        () => NbtFile.ReadRootTagName(nss, compression, true, -1));
-                    NbtFile.ReadRootTagName(nss, compression, true, 0);
+                        () => NbtFile.ReadRootTagName(nss, compression, NbtFlavor.Default, -1));
+                    NbtFile.ReadRootTagName(nss, compression, NbtFlavor.Default, 0);
                 }
             }
         }
@@ -270,7 +270,8 @@ namespace fNbt.Test {
 
         [Test]
         public void HugeNbtFileTest() {
-            byte[] val = new byte[1024*1024*1024];
+            // Tests writing byte arrays that exceed the max NbtBinaryWriter chunk size
+            byte[] val = new byte[5 * 1024 * 1024];
             NbtCompound root = new NbtCompound("root") {
                 new NbtByteArray("payload1") {
                     Value = val
@@ -318,7 +319,7 @@ namespace fNbt.Test {
 
             Assert.Throws<ArgumentNullException>(() => NbtFile.ReadRootTagName(null));
             Assert.Throws<ArgumentNullException>(
-                () => NbtFile.ReadRootTagName((Stream)null, NbtCompression.None, true, 0));
+                () => NbtFile.ReadRootTagName((Stream)null, NbtCompression.None, NbtFlavor.Default, 0));
 
         }
 

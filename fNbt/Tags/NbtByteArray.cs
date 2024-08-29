@@ -1,13 +1,11 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using System.Text;
-using JetBrains.Annotations;
 
 namespace fNbt {
     /// <summary> A tag containing an array of bytes. </summary>
     public sealed class NbtByteArray : NbtTag {
-        static readonly byte[] ZeroArray = new byte[0];
-
         /// <summary> Type of this tag (ByteArray). </summary>
         public override NbtTagType TagType {
             get { return NbtTagType.ByteArray; }
@@ -15,24 +13,22 @@ namespace fNbt {
 
         /// <summary> Value/payload of this tag (an array of bytes). Value is stored as-is and is NOT cloned. May not be <c>null</c>. </summary>
         /// <exception cref="ArgumentNullException"> <paramref name="value"/> is <c>null</c>. </exception>
-        [NotNull]
         public byte[] Value {
             get { return bytes; }
             set {
                 if (value == null) {
-                    throw new ArgumentNullException("value");
+                    throw new ArgumentNullException(nameof(value));
                 }
                 bytes = value;
             }
         }
 
-        [NotNull]
         byte[] bytes;
 
 
         /// <summary> Creates an unnamed NbtByte tag, containing an empty array of bytes. </summary>
         public NbtByteArray()
-            : this((string)null) {}
+            : this((string?)null) { }
 
 
         /// <summary> Creates an unnamed NbtByte tag, containing the given array of bytes. </summary>
@@ -40,15 +36,15 @@ namespace fNbt {
         /// <exception cref="ArgumentNullException"> <paramref name="value"/> is <c>null</c>. </exception>
         /// <remarks> Given byte array will be cloned. To avoid unnecessary copying, call one of the other constructor
         /// overloads (that do not take a byte[]) and then set the Value property yourself. </remarks>
-        public NbtByteArray([NotNull] byte[] value)
-            : this(null, value) {}
+        public NbtByteArray(byte[] value)
+            : this(null, value) { }
 
 
         /// <summary> Creates an NbtByte tag with the given name, containing an empty array of bytes. </summary>
         /// <param name="tagName"> Name to assign to this tag. May be <c>null</c>. </param>
-        public NbtByteArray([CanBeNull] string tagName) {
+        public NbtByteArray(string? tagName) {
             name = tagName;
-            bytes = ZeroArray;
+            bytes = Array.Empty<byte>();
         }
 
 
@@ -58,8 +54,8 @@ namespace fNbt {
         /// <exception cref="ArgumentNullException"> <paramref name="value"/> is <c>null</c>. </exception>
         /// <remarks> Given byte array will be cloned. To avoid unnecessary copying, call one of the other constructor
         /// overloads (that do not take a byte[]) and then set the Value property yourself. </remarks>
-        public NbtByteArray([CanBeNull] string tagName, [NotNull] byte[] value) {
-            if (value == null) throw new ArgumentNullException("value");
+        public NbtByteArray(string? tagName, byte[] value) {
+            if (value == null) throw new ArgumentNullException(nameof(value));
             name = tagName;
             bytes = (byte[])value.Clone();
         }
@@ -69,8 +65,8 @@ namespace fNbt {
         /// <param name="other"> Tag to copy. May not be <c>null</c>. </param>
         /// <exception cref="ArgumentNullException"> <paramref name="other"/> is <c>null</c>. </exception>
         /// <remarks> Byte array of given tag will be cloned. </remarks>
-        public NbtByteArray([NotNull] NbtByteArray other) {
-            if (other == null) throw new ArgumentNullException("other");
+        public NbtByteArray(NbtByteArray other) {
+            if (other == null) throw new ArgumentNullException(nameof(other));
             name = other.name;
             bytes = (byte[])other.Value.Clone();
         }
@@ -127,6 +123,7 @@ namespace fNbt {
         }
 
 
+        /// <inheritdoc />
         public override object Clone() {
             return new NbtByteArray(this);
         }
@@ -138,9 +135,9 @@ namespace fNbt {
             }
             sb.Append("TAG_Byte_Array");
             if (!String.IsNullOrEmpty(Name)) {
-                sb.AppendFormat("(\"{0}\")", Name);
+                sb.AppendFormat(CultureInfo.InvariantCulture, "(\"{0}\")", Name);
             }
-            sb.AppendFormat(": [{0} bytes]", bytes.Length);
+            sb.AppendFormat(CultureInfo.InvariantCulture, ": [{0} bytes]", bytes.Length);
         }
     }
 }

@@ -1,8 +1,7 @@
-﻿using System;
+using System;
 using System.Diagnostics;
 using System.IO;
 using System.Text;
-using JetBrains.Annotations;
 
 namespace fNbt {
     /// <summary> BinaryReader wrapper that takes care of reading primitives from an NBT stream,
@@ -10,18 +9,18 @@ namespace fNbt {
     public sealed class NbtBinaryReader : BinaryReader {
         readonly byte[] buffer = new byte[sizeof(double)];
 
-        byte[] seekBuffer;
-        const int SeekBufferSize = 8*1024;
+        byte[]? seekBuffer;
+        const int SeekBufferSize = 8 * 1024;
         readonly bool swapNeeded;
         readonly byte[] stringConversionBuffer = new byte[64];
 
-		public bool UseVarInt { get; set; }
+        public NbtFlavor Flavor { get; }
 
-		public NbtBinaryReader([NotNull] Stream input, bool bigEndian)
+        public NbtBinaryReader(Stream input, NbtFlavor flavor)
             : base(input) {
-            swapNeeded = (BitConverter.IsLittleEndian == bigEndian);
+            swapNeeded = flavor.BigEndian == BitConverter.IsLittleEndian;
+            this.Flavor = flavor;
         }
-
 
         public NbtTagType ReadTagType() {
             int type = ReadByte();
@@ -33,7 +32,6 @@ namespace fNbt {
             return (NbtTagType)type;
         }
 
-
         public override short ReadInt16() {
             if (swapNeeded) {
                 return Swap(base.ReadInt16());
@@ -42,9 +40,8 @@ namespace fNbt {
             }
         }
 
-
         public override int ReadInt32() {
-            if (UseVarInt) {
+            if (Flavor.UseVarInt) {
                 return ReadVarInt();
             } else {
                 if (swapNeeded) {
@@ -55,30 +52,29 @@ namespace fNbt {
             }
         }
 
-		public int ReadVarInt()
-		{
-			return VarInt.ReadSInt32(BaseStream);
-		}
+        public int ReadVarInt()
+        {
+            return VarInt.ReadSInt32(BaseStream);
+        }
 
+        public override long ReadInt64() {
+            if (Flavor.UseVarInt) {
+                return ReadVarLong();
+            } else {
+                if (swapNeeded) {
+                    return Swap(base.ReadInt64());
+                } else {
+                    return base.ReadInt64();
+                }
+            }
+        }
 
-	    public override long ReadInt64() {
-		    if (UseVarInt) {
-			    return ReadVarLong();
-		    } else {
-			    if (swapNeeded) {
-				    return Swap(base.ReadInt64());
-			    } else {
-				    return base.ReadInt64();
-			    }
-		    }
-	    }
+        public long ReadVarLong()
+        {
+            return VarInt.ReadSInt64(BaseStream);
+        }
 
-	    public long ReadVarLong()
-	    {
-		    return VarInt.ReadSInt64(BaseStream);
-	    }
-
-		public override float ReadSingle() {
+        public override float ReadSingle() {
             if (swapNeeded) {
                 FillBuffer(sizeof(float));
                 Array.Reverse(buffer, 0, sizeof(float));
@@ -98,25 +94,25 @@ namespace fNbt {
             return base.ReadDouble();
         }
 
-	    public int ReadLenght() {
-		    return (int)VarInt.ReadUInt32(BaseStream);
-	    }
+        public int ReadLength() {
+            return (int)VarInt.ReadUInt32(BaseStream);
+        }
 
-		public override string ReadString() {
+        public override string ReadString() {
             int length;
-	        if (UseVarInt) {
-				length = ReadLenght();
-			}
-			else {
-				length = ReadInt16();
-			}
-			if (length < 0) {
+            if (Flavor.UseVarInt) {
+                length = ReadLength();
+            } else {
+                length = ReadInt16();
+            }
+            if (length < 0) {
                 throw new NbtFormatException("Negative string length given!");
             }
             if (length < stringConversionBuffer.Length) {
                 int stringBytesRead = 0;
                 while (stringBytesRead < length) {
-                    int bytesReadThisTime = BaseStream.Read(stringConversionBuffer, stringBytesRead, length);
+                    int bytesToRead = length - stringBytesRead;
+                    int bytesReadThisTime = BaseStream.Read(stringConversionBuffer, stringBytesRead, bytesToRead);
                     if (bytesReadThisTime == 0) {
                         throw new EndOfStreamException();
                     }
@@ -132,10 +128,9 @@ namespace fNbt {
             }
         }
 
-
         public void Skip(int bytesToSkip) {
             if (bytesToSkip < 0) {
-                throw new ArgumentOutOfRangeException("bytesToSkip");
+                throw new ArgumentOutOfRangeException(nameof(bytesToSkip));
             } else if (BaseStream.CanSeek) {
                 BaseStream.Position += bytesToSkip;
             } else if (bytesToSkip != 0) {
@@ -152,7 +147,6 @@ namespace fNbt {
             }
         }
 
-
         new void FillBuffer(int numBytes) {
             int offset = 0;
             do {
@@ -162,23 +156,18 @@ namespace fNbt {
             } while (offset < numBytes);
         }
 
-
         public void SkipString() {
-			short length;
-			if (UseVarInt)
-			{
-				length = ReadByte();
-			}
-			else
-			{
-				length = ReadInt16();
-			}
-			if (length < 0) {
+            short length;
+            if (Flavor.UseVarInt) {
+                length = ReadByte();
+            } else {
+                length = ReadInt16();
+            }
+            if (length < 0) {
                 throw new NbtFormatException("Negative string length given!");
             }
             Skip(length);
         }
-
 
         [DebuggerStepThrough]
         static short Swap(short v) {
@@ -187,7 +176,6 @@ namespace fNbt {
                                (v << 8) & 0xFF00);
             }
         }
-
 
         [DebuggerStepThrough]
         static int Swap(int v) {
@@ -209,164 +197,7 @@ namespace fNbt {
             }
         }
 
-
-        [CanBeNull]
         public TagSelector Selector { get; set; }
 
     }
-
-	internal static class VarInt
-	{
-		private static uint EncodeZigZag32(int n)
-		{
-			// Note:  the right-shift must be arithmetic
-			return (uint)((n << 1) ^ (n >> 31));
-		}
-
-		private static int DecodeZigZag32(uint n)
-		{
-			return (int)(n >> 1) ^ -(int)(n & 1);
-		}
-
-		private static ulong EncodeZigZag64(long n)
-		{
-			return (ulong)((n << 1) ^ (n >> 63));
-		}
-
-		private static long DecodeZigZag64(ulong n)
-		{
-			return (long)(n >> 1) ^ -(long)(n & 1);
-		}
-
-		private static uint ReadRawVarInt32(Stream buf, int maxSize)
-		{
-			uint result = 0;
-			int j = 0;
-			int b0;
-
-			do
-			{
-				b0 = buf.ReadByte(); // -1 if EOS
-				if (b0 < 0) throw new EndOfStreamException("Not enough bytes for VarInt");
-
-				result |= (uint)(b0 & 0x7f) << j++ * 7;
-
-				if (j > maxSize)
-				{
-					throw new OverflowException("VarInt too big");
-				}
-			} while ((b0 & 0x80) == 0x80);
-
-			return result;
-		}
-
-		private static ulong ReadRawVarInt64(Stream buf, int maxSize)
-		{
-			ulong result = 0;
-			int j = 0;
-			int b0;
-
-			do
-			{
-				b0 = buf.ReadByte(); // -1 if EOS
-				if (b0 < 0) throw new EndOfStreamException("Not enough bytes for VarInt");
-
-				result |= (ulong)(b0 & 0x7f) << j++ * 7;
-
-				if (j > maxSize)
-				{
-					throw new OverflowException("VarInt too big");
-				}
-			} while ((b0 & 0x80) == 0x80);
-
-			return result;
-		}
-
-		private static void WriteRawVarInt32(Stream buf, uint value)
-		{
-			while ((value & -128) != 0)
-			{
-				buf.WriteByte((byte)((value & 0x7F) | 0x80));
-				value >>= 7;
-			}
-
-			buf.WriteByte((byte)value);
-		}
-
-		private static void WriteRawVarInt64(Stream buf, ulong value)
-		{
-			while ((value & 0xFFFFFFFFFFFFFF80) != 0)
-			{
-				buf.WriteByte((byte)((value & 0x7F) | 0x80));
-				value >>= 7;
-			}
-
-			buf.WriteByte((byte)value);
-		}
-
-		// Int
-
-		public static void WriteInt32(Stream stream, int value)
-		{
-			WriteRawVarInt32(stream, (uint)value);
-		}
-
-		public static int ReadInt32(Stream stream)
-		{
-			return (int)ReadRawVarInt32(stream, 5);
-		}
-
-		public static void WriteSInt32(Stream stream, int value)
-		{
-			WriteRawVarInt32(stream, EncodeZigZag32(value));
-		}
-
-		public static int ReadSInt32(Stream stream)
-		{
-			return DecodeZigZag32(ReadRawVarInt32(stream, 5));
-		}
-
-		public static void WriteUInt32(Stream stream, uint value)
-		{
-			WriteRawVarInt32(stream, value);
-		}
-
-		public static uint ReadUInt32(Stream stream)
-		{
-			return ReadRawVarInt32(stream, 5);
-		}
-
-		// Long
-
-		public static void WriteInt64(Stream stream, long value)
-		{
-			WriteRawVarInt64(stream, (ulong)value);
-		}
-
-		public static long ReadInt64(Stream stream)
-		{
-			return (long)ReadRawVarInt64(stream, 10);
-		}
-
-		public static void WriteSInt64(Stream stream, long value)
-		{
-			WriteRawVarInt64(stream, EncodeZigZag64(value));
-		}
-
-		public static long ReadSInt64(Stream stream)
-		{
-			return DecodeZigZag64(ReadRawVarInt64(stream, 10));
-		}
-
-		public static void WriteUInt64(Stream stream, ulong value)
-		{
-			WriteRawVarInt64(stream, value);
-		}
-
-		public static ulong ReadUInt64(Stream stream)
-		{
-			return ReadRawVarInt64(stream, 10);
-		}
-	}
-
 }

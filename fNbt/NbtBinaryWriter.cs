@@ -1,7 +1,6 @@
 using System;
 using System.IO;
 using System.Text;
-using JetBrains.Annotations;
 
 namespace fNbt {
     /// <summary> BinaryWriter wrapper that writes NBT primitives to a stream,
@@ -17,9 +16,7 @@ namespace fNbt {
         // Each instance has to have its own encoder, because it does maintain state.
         readonly Encoder encoder = Encoding.GetEncoder();
 
-		public bool UseVarInt { get; set; }
-
-		public Stream BaseStream {
+        public Stream BaseStream {
             get {
                 stream.Flush();
                 return stream;
@@ -32,7 +29,7 @@ namespace fNbt {
         const int BufferSize = 256;
 
         // UTF8 characters use at most 4 bytes each.
-        const int MaxBufferedStringLength = BufferSize/4;
+        const int MaxBufferedStringLength = BufferSize / 4;
 
         // Each NbtBinaryWriter needs to have its own instance of the buffer.
         readonly byte[] buffer = new byte[BufferSize];
@@ -40,12 +37,14 @@ namespace fNbt {
         // Swap is only needed if endianness of the runtime differs from desired NBT stream
         readonly bool swapNeeded;
 
+        public NbtFlavor Flavor { get; }
 
-        public NbtBinaryWriter([NotNull] Stream input, bool bigEndian) {
-            if (input == null) throw new ArgumentNullException("input");
-            if (!input.CanWrite) throw new ArgumentException("Given stream must be writable", "input");
+        public NbtBinaryWriter(Stream input, NbtFlavor flavor) {
+            if (input == null) throw new ArgumentNullException(nameof(input));
+            if (!input.CanWrite) throw new ArgumentException("Given stream must be writable", nameof(input));
             stream = input;
-            swapNeeded = (BitConverter.IsLittleEndian == bigEndian);
+            this.Flavor = flavor;
+            swapNeeded = flavor.BigEndian == BitConverter.IsLittleEndian;
         }
 
 
@@ -72,80 +71,75 @@ namespace fNbt {
             stream.Write(buffer, 0, 2);
         }
 
+        public void Write(int value) {
+            if (Flavor.UseVarInt) {
+                WriteVarInt(value);
+            } else {
+                unchecked {
+                    if (swapNeeded) {
+                        buffer[0] = (byte)(value >> 24);
+                        buffer[1] = (byte)(value >> 16);
+                        buffer[2] = (byte)(value >> 8);
+                        buffer[3] = (byte)value;
+                    } else {
+                        buffer[0] = (byte)value;
+                        buffer[1] = (byte)(value >> 8);
+                        buffer[2] = (byte)(value >> 16);
+                        buffer[3] = (byte)(value >> 24);
+                    }
+                }
+                stream.Write(buffer, 0, 4);
+            }
+        }
 
-	    public void Write(int value) {
-		    if (UseVarInt) {
-			    WriteVarInt(value);
-		    } else {
-			    unchecked {
-				    if (swapNeeded) {
-					    buffer[0] = (byte)(value >> 24);
-					    buffer[1] = (byte)(value >> 16);
-					    buffer[2] = (byte)(value >> 8);
-					    buffer[3] = (byte)value;
-				    } else {
-					    buffer[0] = (byte)value;
-					    buffer[1] = (byte)(value >> 8);
-					    buffer[2] = (byte)(value >> 16);
-					    buffer[3] = (byte)(value >> 24);
-				    }
-			    }
-			    stream.Write(buffer, 0, 4);
-		    }
-	    }
+        public void WriteVarInt(int value) {
+            // VarInt is LE by default
+            VarInt.WriteSInt32(BaseStream, value);
+        }
 
+        public static short SwapInt16(short v) {
+            return (short)(((v & 0xff) << 8) | ((v >> 8) & 0xff));
+        }
 
-	    public void WriteVarInt(int value) {
-			// VarInt is LE by default
-			VarInt.WriteSInt32(BaseStream, value);
-		}
+        public static int SwapInt32(int v) {
+            return ((SwapInt16((short)v) & 0xffff) << 0x10) |
+                          (SwapInt16((short)(v >> 0x10)) & 0xffff);
+        }
 
-		public static short SwapInt16(short v)
-		{
-			return (short)(((v & 0xff) << 8) | ((v >> 8) & 0xff));
-		}
+        public void Write(long value) {
+            if (Flavor.UseVarInt) {
+                WriteVarLong(value);
+            } else {
+                unchecked {
+                    if (swapNeeded) {
+                        buffer[0] = (byte)(value >> 56);
+                        buffer[1] = (byte)(value >> 48);
+                        buffer[2] = (byte)(value >> 40);
+                        buffer[3] = (byte)(value >> 32);
+                        buffer[4] = (byte)(value >> 24);
+                        buffer[5] = (byte)(value >> 16);
+                        buffer[6] = (byte)(value >> 8);
+                        buffer[7] = (byte)value;
+                    } else {
+                        buffer[0] = (byte)value;
+                        buffer[1] = (byte)(value >> 8);
+                        buffer[2] = (byte)(value >> 16);
+                        buffer[3] = (byte)(value >> 24);
+                        buffer[4] = (byte)(value >> 32);
+                        buffer[5] = (byte)(value >> 40);
+                        buffer[6] = (byte)(value >> 48);
+                        buffer[7] = (byte)(value >> 56);
+                    }
+                }
+                stream.Write(buffer, 0, 8);
+            }
+        }
 
-		public static int SwapInt32(int v)
-		{
-			return (int)(((SwapInt16((short)v) & 0xffff) << 0x10) |
-						  (SwapInt16((short)(v >> 0x10)) & 0xffff));
-		}
+        public void WriteVarLong(long value) {
+            VarInt.WriteSInt64(BaseStream, value);
+        }
 
-
-	    public void Write(long value) {
-		    if (UseVarInt) {
-			    WriteVarLong(value);
-		    } else {
-			    unchecked {
-				    if (swapNeeded) {
-					    buffer[0] = (byte)(value >> 56);
-					    buffer[1] = (byte)(value >> 48);
-					    buffer[2] = (byte)(value >> 40);
-					    buffer[3] = (byte)(value >> 32);
-					    buffer[4] = (byte)(value >> 24);
-					    buffer[5] = (byte)(value >> 16);
-					    buffer[6] = (byte)(value >> 8);
-					    buffer[7] = (byte)value;
-				    } else {
-					    buffer[0] = (byte)value;
-					    buffer[1] = (byte)(value >> 8);
-					    buffer[2] = (byte)(value >> 16);
-					    buffer[3] = (byte)(value >> 24);
-					    buffer[4] = (byte)(value >> 32);
-					    buffer[5] = (byte)(value >> 40);
-					    buffer[6] = (byte)(value >> 48);
-					    buffer[7] = (byte)(value >> 56);
-				    }
-			    }
-			    stream.Write(buffer, 0, 8);
-		    }
-	    }
-
-	    public void WriteVarLong(long value) {
-		    VarInt.WriteSInt64(BaseStream, value);
-	    }
-
-		public void Write(float value) {
+        public void Write(float value) {
             ulong tmpValue = *(uint*)&value;
             unchecked {
                 if (swapNeeded) {
@@ -195,22 +189,21 @@ namespace fNbt {
 		    VarInt.WriteUInt32(BaseStream, (uint)value);
 	    }
 
-		// Based on BinaryWriter.Write(String)
-		public void Write([NotNull] string value) {
+        // Based on BinaryWriter.Write(String)
+        public void Write(string value) {
             if (value == null) {
-                throw new ArgumentNullException("value");
+                throw new ArgumentNullException(nameof(value));
             }
 
             // Write out string length (as number of bytes)
             int numBytes = Encoding.GetByteCount(value);
-	        if (UseVarInt) {
-		        WriteLength(numBytes);
-			}
-			else {
-				Write((short)numBytes);
-			}
+            if (Flavor.UseVarInt) {
+                WriteLength(numBytes);
+            } else {
+                Write((short)numBytes);
+            }
 
-			if (numBytes <= BufferSize) {
+            if (numBytes <= BufferSize) {
                 // If the string fits entirely in the buffer, encode and write it as one
                 Encoding.GetBytes(value, 0, value.Length, buffer, 0);
                 stream.Write(buffer, 0, numBytes);
@@ -245,6 +238,5 @@ namespace fNbt {
                 written += toWrite;
             }
         }
-
     }
 }
