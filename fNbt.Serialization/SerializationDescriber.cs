@@ -111,8 +111,15 @@ namespace fNbt.Serialization {
                         if (property.GetCustomAttribute<NbtIgnoreAttribute>() != null) {
                             continue;
                         }
+                        if (property.PropertyType.GetCustomAttribute<NbtIgnoreAttribute>() != null) {
+                            continue;
+                        }
 
                         var atr = property.GetCustomAttribute<NbtPropertyAttribute>();
+                        if (settings.NbtPropertyHandling == Handlings.NbtPropertyHandling.MarkedOnly && atr == null) {
+                            continue;
+                        }
+
                         var name = atr?.Name;
 
                         if (name == null) {

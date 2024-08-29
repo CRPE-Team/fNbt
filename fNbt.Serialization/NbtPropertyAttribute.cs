@@ -7,6 +7,10 @@ namespace fNbt.Serialization {
         public string Name { get; }
         public Type ConverterType { get; }
 
+        public NbtPropertyAttribute() {
+
+        }
+
         public NbtPropertyAttribute(string name) {
             Name = name;
         }

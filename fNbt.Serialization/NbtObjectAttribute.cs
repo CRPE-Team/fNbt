@@ -6,6 +6,10 @@ namespace fNbt.Serialization {
     public class NbtObjectAttribute : Attribute {
         public Type ConverterType { get; }
 
+        public NbtObjectAttribute() {
+
+        }
+
         public NbtObjectAttribute(Type converterType) {
             CheckConverterType(converterType);
 

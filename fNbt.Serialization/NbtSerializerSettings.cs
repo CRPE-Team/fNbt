@@ -17,6 +17,7 @@ namespace fNbt.Serialization {
         public MissingMemberHandling MissingMemberHandling { get; set; } = MissingMemberHandling.Default;
         public NullReferenceHandling NullReferenceHandling { get; set; } = NullReferenceHandling.Default;
         public LoopReferenceHandling LoopReferenceHandling { get; set; } = LoopReferenceHandling.Default;
+        public NbtPropertyHandling NbtPropertyHandling { get; set; } = NbtPropertyHandling.Default;
 
         public override bool Equals(object obj) {
             return obj is NbtSerializerSettings settings &&
@@ -27,21 +28,24 @@ namespace fNbt.Serialization {
                    PropertySetHandling == settings.PropertySetHandling &&
                    MissingMemberHandling == settings.MissingMemberHandling &&
                    NullReferenceHandling == settings.NullReferenceHandling &&
-                   LoopReferenceHandling == settings.LoopReferenceHandling;
+                   LoopReferenceHandling == settings.LoopReferenceHandling &&
+                   NbtPropertyHandling == settings.NbtPropertyHandling;
         }
 
         public override int GetHashCode() {
-            var hashCode = new HashCode();
-            Converters.ForEach(hashCode.Add);
+            var hash = new HashCode();
 
-            return HashCode.Combine(Flavor, 
-                hashCode.ToHashCode(), 
-                NamingStrategy, 
-                PropertyGetHandling, 
-                PropertySetHandling, 
-                MissingMemberHandling, 
-                NullReferenceHandling,
-                LoopReferenceHandling);
+            hash.Add(Flavor);
+            Converters.ForEach(hash.Add);
+            hash.Add(NamingStrategy);
+            hash.Add(PropertyGetHandling);
+            hash.Add(PropertySetHandling);
+            hash.Add(MissingMemberHandling);
+            hash.Add(NullReferenceHandling);
+            hash.Add(LoopReferenceHandling);
+            hash.Add(NbtPropertyHandling);
+
+            return hash.ToHashCode();
         }
     }
 }
