@@ -116,7 +116,9 @@ namespace fNbt.Serialization {
                         }
 
                         var atr = property.GetCustomAttribute<NbtPropertyAttribute>();
-                        if (settings.NbtPropertyHandling == Handlings.NbtPropertyHandling.MarkedOnly && atr == null) {
+                        if (settings.NbtPropertyHandling == Handlings.NbtPropertyHandling.MarkedOnly 
+                            && atr == null
+                            && property.PropertyType.GetCustomAttribute<NbtPropertyAttribute>() == null) {
                             continue;
                         }
 

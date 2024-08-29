@@ -29,7 +29,11 @@ namespace fNbt.Serialization {
         }
 
         public static TTag ToNbt<TTag>(object value, NbtSerializerSettings settings = null) where TTag : NbtTag {
-            return (TTag) ToNbt(value, string.Empty, settings);
+            return ToNbt<TTag>(value, string.Empty, settings);
+        }
+
+        public static TTag ToNbt<TTag>(object value, string name, NbtSerializerSettings settings = null) where TTag : NbtTag {
+            return (TTag)ToNbt(value, name, settings);
         }
 
         public static NbtTag ToNbt(object value, NbtSerializerSettings settings = null) {
