@@ -5,17 +5,17 @@
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
 		<GeneratePackageOnBuild>true</GeneratePackageOnBuild>
-		<PackageId>MiNET.fNbt.Serialization</PackageId>
+		<PackageId>CRPE-MiNET.fNbt.Serialization</PackageId>
 		<Version>0.0.0</Version>
-		<Authors>kennyvv</Authors>
-		<Company>Kenny van Vulpen</Company>
+    <Authors>DarkLexFirst</Authors>
+		<Company>CRPE-Team</Company>
 		<Description>fNbt Serialization</Description>
-		<Copyright>2010-2011 Erik Davidson; 2012-2015 Matvei Stefarov; 2016-2018 Niclas Olofsson; 2022 Kenny van Vulpen</Copyright>
-		<PackageLicenseUrl>https://github.com/NiclasOlofsson/fNbt/blob/master/docs/LICENSE</PackageLicenseUrl>
-		<PackageProjectUrl>https://github.com/NiclasOlofsson/fNbt</PackageProjectUrl>
-		<RepositoryUrl>https://github.com/NiclasOlofsson/fNbt</RepositoryUrl>
-		<PackageIconUrl><![CDATA[https://secure.gravatar.com/avatar/2ba5d72bdad85108d14512c4d27ea550?s=128&r=g&d=retro]]></PackageIconUrl>
-		<PackageTags>MiNET fnbt nbt MCPE varint and string</PackageTags>
+		<Copyright>2024 Alexey Lashov</Copyright>
+		<PackageLicenseUrl>https://github.com/CRPE-Team/fNbt/blob/master/docs/LICENSE</PackageLicenseUrl>
+		<PackageProjectUrl>https://github.com/CRPE-Team/fNbt</PackageProjectUrl>
+		<RepositoryUrl>https://github.com/CRPE-Team/fNbt</RepositoryUrl>
+		<PackageIconUrl><![CDATA[https://avatars.githubusercontent.com/u/73496612?s=200&v=4]]></PackageIconUrl>
+		<PackageTags>MiNET fnbt nbt MCPE CRPE varint and string</PackageTags>
 		<FileVersion>1.0.0.0</FileVersion>
 		<AssemblyVersion>1.0.0.0</AssemblyVersion>
 
@@ -25,12 +25,6 @@
 		<LangVersion>latest</LangVersion>
 		<NoWarn>1701;1702;1701</NoWarn>
 	</PropertyGroup>
-
-	<ItemGroup>
-	  <Compile Remove="Properties\**" />
-	  <EmbeddedResource Remove="Properties\**" />
-	  <None Remove="Properties\**" />
-	</ItemGroup>
 
 	<ItemGroup>
 	  <ProjectReference Include="..\fNbt\fNbt.csproj" />

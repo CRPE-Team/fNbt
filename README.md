@@ -37,9 +37,6 @@ Latest version of fNbt requires .NET Framework 3.5+ (client or full profile).
 - **Amalgamation** (single source file):
     * Non-annotated: https://fcraft.net/fnbt/fNbt_v0.6.4.cs
 	    <br><sup>SHA1: 9298dbe00d080bcf5d32299415aaf856590ba3bf</sup>
-    * Annotated (using [JetBrains.Annotations](https://blog.jetbrains.com/dotnet/2018/05/03/what-are-jetbrains-annotations/)):
-	    https://fcraft.net/fnbt/fNbt_v0.6.4_Annotated.cs
-		<br><sup>SHA1: ae096d83b57bf59c708ad66168d45c1ea9b58175</sup>
 
 
 ## EXAMPLES

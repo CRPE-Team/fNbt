@@ -23,7 +23,7 @@ namespace fNbt {
         }
 
         /// <summary> Whether numbers are encoded in BigEndian (Java) or LittleEndian (Bedrock) byte order. Default is true. </summary>
-        public bool BigEndian { get; set; }
+        public bool BigEndian { get; internal set; }
 
         /// <summary> Whether lists are allowed to be root tags. </summary>
         public bool AllowListRootTag { get; private set; }
@@ -38,7 +38,7 @@ namespace fNbt {
         public bool UnnamedRootTag { get; private set; }
 
         /// <summary> Whether to use VarInts with ZigZag encoding to store most numbers. </summary>
-        public bool UseVarInt { get; set; }
+        public bool UseVarInt { get; internal set; }
 
         /// <summary>
         /// Appropriate options for reading and writing NBT files and network streams in the original format,

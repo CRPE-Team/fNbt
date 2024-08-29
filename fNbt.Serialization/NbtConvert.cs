@@ -1,8 +1,6 @@
 ﻿using System;
 using System.IO;
-using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("fNbt.Test")]
 namespace fNbt.Serialization {
     public static class NbtConvert
     {

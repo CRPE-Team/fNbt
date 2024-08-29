@@ -1,9 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.IO.Compression;
-using System.Runtime.CompilerServices;
 
-[assembly: InternalsVisibleTo("fNbt.Serialization")]
 namespace fNbt {
     /// <summary> Represents a complete NBT file. </summary>
     public sealed class NbtFile {

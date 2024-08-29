@@ -1,18 +1,18 @@
 <?xml version="1.0"?>
 <package >
   <metadata>
-    <id>MiNET.fnbt</id>
+    <id>CRPE-MiNET.fnbt</id>
     <version>$version$</version>
-    <title>MiNET.fnbt</title>
+    <title>CRPE-MiNET.fnbt</title>
 	  <authors>$author$</authors>
     <owners>$author$</owners>
-    <licenseUrl>https://github.com/NiclasOlofsson/fNbt/blob/master/docs/LICENSE</licenseUrl>
-    <projectUrl>https://github.com/NiclasOlofsson/fNbt</projectUrl>
-    <iconUrl><![CDATA[https://secure.gravatar.com/avatar/2ba5d72bdad85108d14512c4d27ea550?s=128&r=g&d=retro]]></iconUrl>
+    <licenseUrl>https://github.com/CRPE-Team/fNbt/blob/master/docs/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/CRPE-Team/fNbt</projectUrl>
+    <iconUrl><![CDATA[https://avatars.githubusercontent.com/u/73496612?s=200&v=4]]></iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>MiNET fnbt version with support for MCPE 0.16+ varint and string.</description>
-    <releaseNotes>MiNET fnbt version with support for MCPE 0.16+ varint and string.</releaseNotes>
-    <copyright>2010-2011 Erik Davidson; 2012-2015 Matvei Stefarov; 2016 Niclas Olofsson</copyright>
-    <tags>MiNET fnbt nbt MCPE varint and string.</tags>
+    <description>CRPE-MiNET fnbt version with support for MCPE 0.16+ varint string and serializer.</description>
+    <releaseNotes>CRPE-MiNET fnbt version with support for MCPE 0.16+ varint, string and serializer.</releaseNotes>
+    <copyright>2010-2011 Erik Davidson; 2012-2024 Matvei Stefarov; 2016 Niclas Olofsson; 2024 Alexey Lashov</copyright>
+    <tags>CRPE-MiNET fnbt nbt MCPE varint and string.</tags>
   </metadata>
 </package>
