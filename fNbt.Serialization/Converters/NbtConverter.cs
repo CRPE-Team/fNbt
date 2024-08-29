@@ -2,8 +2,8 @@
 
 namespace fNbt.Serialization.Converters {
     public abstract class NbtConverter {
-        public virtual bool CanRead { get; set; } = true;
-        public virtual bool CanWrite { get; set; } = true;
+        public virtual bool CanRead => true;
+        public virtual bool CanWrite => true;
 
         public abstract bool CanConvert(Type type);
 

@@ -1,8 +1,8 @@
 ﻿using System;
 
-namespace fNbt.Serialization.NbtObject {
+namespace fNbt.Serialization {
     internal class NbtSerializationProperty {
-        public Type Type {  get; set; }
+        public Type Type { get; set; }
 
         public string Name { get; set; }
 

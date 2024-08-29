@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Reflection;
 using fNbt.Serialization.Converters;
-using fNbt.Serialization.NbtObject;
 
 namespace fNbt.Serialization {
     internal static class SerializationDescriber {
@@ -12,7 +11,8 @@ namespace fNbt.Serialization {
         public static NbtSerializationCache Describe(Type type, NbtSerializerSettings settings, NbtPropertyAttribute attribute = null) {
             var profile = new NbtSerializationProfile() {
                 ObjectType = type,
-                Settings = settings ?? NbtSerializer.DefaultSettings
+                Settings = settings ?? NbtSerializer.DefaultSettings,
+                PropertyConverterType = attribute?.ConverterType
             };
 
             return _cache.GetOrAdd(profile, p => Describe(p, attribute));
@@ -23,8 +23,27 @@ namespace fNbt.Serialization {
             var type = profile.ObjectType;
             var settings = profile.Settings;
 
-            if (attribute?.Converter != null && attribute.Converter.CanConvert(type)) {
-                converter = attribute.Converter;
+            if (Nullable.GetUnderlyingType(type) != null) {
+                type = Nullable.GetUnderlyingType(type);
+            }
+
+            if (attribute?.ConverterType != null) {
+                var propertyConverter = (NbtConverter)Activator.CreateInstance(attribute.ConverterType);
+
+                if (propertyConverter.CanConvert(type)) {
+                    converter = propertyConverter;
+                }
+            }
+
+            if (converter == null) {
+                var objectAttribute = type.GetCustomAttribute<NbtObjectAttribute>();
+                if (objectAttribute?.ConverterType != null) {
+                    var objectConverter = (NbtConverter)Activator.CreateInstance(objectAttribute.ConverterType);
+
+                    if (objectConverter.CanConvert(type)) {
+                        converter = objectConverter;
+                    }
+                }
             }
 
             if (converter == null) {
@@ -64,6 +83,15 @@ namespace fNbt.Serialization {
                     converter = new ListNbtConverter() {
                         ElementSerializationCache = Describe(gen, settings)
                     };
+                } else if (type.IsEnum) {
+                    var c = Describe(Enum.GetUnderlyingType(type), settings);
+                    if (c.Converter == null) {
+                        return c;
+                    }
+
+                    converter = new InternalEnumNbtConverter() {
+                        UnderlyingTypeConverter = c.Converter
+                    };
                 }
             }
 
@@ -75,37 +103,43 @@ namespace fNbt.Serialization {
 
             _cache.TryAdd(profile, cache);
 
-            if (converter == null) {
-                var properties = type.GetProperties();
+            try {
+                if (converter == null) {
+                    var properties = type.GetProperties();
 
-                foreach (var property in properties) {
-                    if (property.GetCustomAttribute<NbtIgnoreAttribute>() != null) {
-                        continue;
+                    foreach (var property in properties) {
+                        if (property.GetCustomAttribute<NbtIgnoreAttribute>() != null) {
+                            continue;
+                        }
+
+                        var atr = property.GetCustomAttribute<NbtPropertyAttribute>();
+                        var name = atr?.Name;
+
+                        if (name == null) {
+                            name = (settings.NamingStrategy ?? NbtSerializer.DefaultSettings.NamingStrategy).ResolvePropertyName(property.Name);
+                        }
+
+                        var nbtProperty = new NbtSerializationProperty() {
+                            Type = property.PropertyType,
+                            Name = name,
+                            SerializationCache = Describe(property.PropertyType, settings, atr),
+                            Settings = settings
+                        };
+
+                        if (property.GetMethod != null) {
+                            nbtProperty.Get = property.GetMethod.Invoke;
+                        }
+                        if (property.SetMethod != null) {
+                            nbtProperty.Set = property.SetMethod.Invoke;
+                        }
+
+                        cache.Properties.Add(name, nbtProperty);
                     }
-
-                    var atr = property.GetCustomAttribute<NbtPropertyAttribute>();
-                    var name = atr?.Name;
-
-                    if (name == null) {
-                        name = (settings.NamingStrategy ?? NbtSerializer.DefaultSettings.NamingStrategy).ResolvePropertyName(property.Name);
-                    }
-
-                    var nbtProperty = new NbtSerializationProperty() {
-                        Type = property.PropertyType,
-                        Name = name,
-                        SerializationCache = Describe(property.PropertyType, settings, atr),
-                        Settings = settings
-                    };
-
-                    if (property.GetMethod != null) {
-                        nbtProperty.Get = property.GetMethod.Invoke;
-                    }
-                    if (property.SetMethod != null) {
-                        nbtProperty.Set = property.SetMethod.Invoke;
-                    }
-
-                    cache.Properties.Add(name, nbtProperty);
                 }
+            } catch {
+                // remove bad cache
+                _cache.TryRemove(profile, out _);
+                throw;
             }
 
             return cache;

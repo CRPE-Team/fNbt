@@ -2,23 +2,11 @@
 using fNbt.Serialization.Converters;
 
 namespace fNbt.Serialization {
-    [AttributeUsage(AttributeTargets.Property)]
-    public class NbtPropertyAttribute : Attribute {
-        public string Name { get; }
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct | AttributeTargets.Enum)]
+    public class NbtObjectAttribute : Attribute {
         public Type ConverterType { get; }
 
-        public NbtPropertyAttribute(string name) {
-            Name = name;
-        }
-
-        public NbtPropertyAttribute(string name, Type converterType) {
-            CheckConverterType(converterType);
-
-            Name = name;
-            ConverterType = converterType;
-        }
-
-        public NbtPropertyAttribute(Type converterType) {
+        public NbtObjectAttribute(Type converterType) {
             CheckConverterType(converterType);
 
             ConverterType = converterType;

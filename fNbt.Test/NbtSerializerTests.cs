@@ -13,16 +13,23 @@ namespace fNbt.Test {
     public sealed class NbtSerializerTests {
         public class TestObject {
             public byte TestByte { get; set; }
+            public byte? TestNullableByte { get; set; }
+
             public short TestShort { get; set; }
+            public short? TestNullableShort { get; set; }
 
             public int TestInt { get; set; }
+            public int? TestNullableInt { get; set; }
 
             public long TestLong { get; set; }
+            public long? TestNullableLong { get; set; }
 
             [NbtProperty("test_float")]
             public float TestFloat { get; set; }
+            public float? TestNullableFloat { get; set; }
 
-            public double TestDecimal { get; set; }
+            public double TestDouble { get; set; }
+            public double? TestNullableDouble { get; set; }
 
             public byte[] TestByteArray { get; set; }
 
@@ -38,38 +45,12 @@ namespace fNbt.Test {
 
             public SubObject[] TestArray { get; set; }
 
-            public override bool Equals(object obj) {
-                return obj is TestObject @object &&
-                       TestByte == @object.TestByte &&
-                       TestShort == @object.TestShort &&
-                       TestInt == @object.TestInt &&
-                       TestLong == @object.TestLong &&
-                       TestFloat == @object.TestFloat &&
-                       TestDecimal == @object.TestDecimal &&
-                       (TestByteArray == @object.TestByteArray || (TestByteArray != null && TestByteArray.SequenceEqual(@object.TestByteArray))) &&
-                       (TestIntArray == @object.TestIntArray || (TestIntArray != null && TestIntArray.SequenceEqual(@object.TestIntArray))) &&
-                       (TestLongArray == @object.TestLongArray || (TestLongArray != null && TestLongArray.SequenceEqual(@object.TestLongArray))) &&
-                       EqualityComparer<SubObject>.Default.Equals(TestSubObj, @object.TestSubObj) &&
-                       (TestDictionary == @object.TestDictionary || (TestDictionary != null && TestDictionary.SequenceEqual(@object.TestDictionary))) &&
-                       (TestList == @object.TestList || (TestList != null && TestList.SequenceEqual(@object.TestList)));
-            }
+            public ObjEnum TestEnum { get; set; }
 
-            public override int GetHashCode() {
-                HashCode hash = new HashCode();
-                hash.Add(TestByte);
-                hash.Add(TestShort);
-                hash.Add(TestInt);
-                hash.Add(TestLong);
-                hash.Add(TestFloat);
-                hash.Add(TestDecimal);
-                hash.Add(TestByteArray);
-                hash.Add(TestIntArray);
-                hash.Add(TestLongArray);
-                hash.Add(TestSubObj);
-                hash.Add(TestDictionary);
-                hash.Add(TestList);
-                return hash.ToHashCode();
-            }
+            [NbtProperty(typeof(EnumNbtConverter))]
+            public ObjEnum TestStringEnum { get; set; }
+
+            public ObjEnum? TestNullableEnum { get; set; }
 
             public class SubObject {
                 public string TestSubString { get; set; }
@@ -87,14 +68,23 @@ namespace fNbt.Test {
             public static TestObject Create() {
                 return new TestObject() {
                     TestByte = 131,
+                    TestNullableByte = 132,
                     TestShort = 13141,
+                    TestNullableShort = 13142,
                     TestInt = 131412,
+                    TestNullableInt = 131413,
                     TestLong = 13141231212,
+                    TestNullableLong = 13141231213,
                     TestFloat = 123.21f,
-                    TestDecimal = 123.21,
+                    TestNullableFloat = 123.22f,
+                    TestDouble = 124.21,
+                    TestNullableDouble = 124.22,
+                    TestEnum = ObjEnum.First,
+                    TestStringEnum = ObjEnum.Third,
+                    TestNullableEnum = ObjEnum.Second,
                     TestByteArray = new byte[] { 14, 2, 121 },
-                    TestIntArray = new int[] { 14, 2, 121 },
-                    TestLongArray = new long[] { 14, 2, 121 },
+                    TestIntArray = new int[] { 15, 3, 122 },
+                    TestLongArray = new long[] { 16, 4, 123 },
                     TestSubObj = new TestObject.SubObject() { TestSubString = "test value" },
                     TestDictionary = new Dictionary<string, TestObject.SubObject>() {
                         { "test key 0", new TestObject.SubObject() { TestSubString = "test value" } },
@@ -107,6 +97,65 @@ namespace fNbt.Test {
                         new TestObject.SubObject() { TestSubString = "test ar val" }
                     }
                 };
+            }
+
+            public override bool Equals(object obj) {
+                return obj is TestObject @object &&
+                       TestByte == @object.TestByte &&
+                       TestNullableByte == @object.TestNullableByte &&
+                       TestShort == @object.TestShort &&
+                       TestNullableShort == @object.TestNullableShort &&
+                       TestInt == @object.TestInt &&
+                       TestNullableInt == @object.TestNullableInt &&
+                       TestLong == @object.TestLong &&
+                       TestNullableLong == @object.TestNullableLong &&
+                       TestFloat == @object.TestFloat &&
+                       TestNullableFloat == @object.TestNullableFloat &&
+                       TestDouble == @object.TestDouble &&
+                       TestNullableDouble == @object.TestNullableDouble &&
+                       TestEnum == @object.TestEnum &&
+                       TestStringEnum == @object.TestStringEnum &&
+                       TestNullableEnum == @object.TestNullableEnum &&
+                       (TestByteArray == @object.TestByteArray || (TestByteArray != null && TestByteArray.SequenceEqual(@object.TestByteArray))) &&
+                       (TestIntArray == @object.TestIntArray || (TestIntArray != null && TestIntArray.SequenceEqual(@object.TestIntArray))) &&
+                       (TestLongArray == @object.TestLongArray || (TestLongArray != null && TestLongArray.SequenceEqual(@object.TestLongArray))) &&
+                       EqualityComparer<SubObject>.Default.Equals(TestSubObj, @object.TestSubObj) &&
+                       (TestDictionary == @object.TestDictionary || (TestDictionary != null && TestDictionary.SequenceEqual(@object.TestDictionary))) &&
+                       (TestList == @object.TestList || (TestList != null && TestList.SequenceEqual(@object.TestList)));
+            }
+
+            public override int GetHashCode() {
+                HashCode hash = new HashCode();
+                hash.Add(TestByte);
+                hash.Add(TestNullableByte);
+                hash.Add(TestShort);
+                hash.Add(TestNullableShort);
+                hash.Add(TestInt);
+                hash.Add(TestNullableInt);
+                hash.Add(TestLong);
+                hash.Add(TestNullableLong);
+                hash.Add(TestFloat);
+                hash.Add(TestNullableFloat);
+                hash.Add(TestDouble);
+                hash.Add(TestNullableDouble);
+                hash.Add(TestEnum);
+                hash.Add(TestStringEnum);
+                hash.Add(TestNullableEnum);
+                hash.Add(TestByteArray);
+                hash.Add(TestIntArray);
+                hash.Add(TestLongArray);
+                hash.Add(TestSubObj);
+                hash.Add(TestDictionary);
+                hash.Add(TestList);
+                hash.Add(TestArray);
+                return hash.ToHashCode();
+            }
+
+            public enum ObjEnum {
+                None = 0,
+                First = 1,
+                Second = 2,
+                Third = 3,
             }
         }
 
@@ -128,30 +177,6 @@ namespace fNbt.Test {
             public string TestString { get; set; }
 
             public string TestString2 { get; set; }
-        }
-
-        [Test]
-        public void LoopReferenceIgnoreSerializationTest() {
-            var obj = new LoopObject() {
-                TestString = "test val"
-            };
-
-            obj.Loop = obj;
-            obj.Loop2 = obj;
-
-            var stream = new MemoryStream();
-
-            NbtSerializer.Write(obj, stream, new NbtSerializerSettings() { 
-                NullReferenceHandling = NullReferenceHandling.Ignore, 
-                LoopReferenceHandling = LoopReferenceHandling.Ignore 
-            });
-            stream.Position = 0;
-
-            var newObj = NbtSerializer.Read<LoopObject>(stream);
-
-            Assert.AreEqual(obj.TestString, newObj.TestString);
-            Assert.IsNull(newObj.Loop);
-            Assert.IsNull(newObj.Loop2);
         }
 
         [Test]
@@ -184,6 +209,30 @@ namespace fNbt.Test {
             });
 
             Assert.AreEqual(obj.TestString, newObj.TestString);
+        }
+
+        [Test]
+        public void LoopReferenceIgnoreSerializationTest() {
+            var obj = new LoopObject() {
+                TestString = "test val"
+            };
+
+            obj.Loop = obj;
+            obj.Loop2 = obj;
+
+            var stream = new MemoryStream();
+
+            NbtSerializer.Write(obj, stream, new NbtSerializerSettings() {
+                NullReferenceHandling = NullReferenceHandling.Ignore,
+                LoopReferenceHandling = LoopReferenceHandling.Ignore
+            });
+            stream.Position = 0;
+
+            var newObj = NbtSerializer.Read<LoopObject>(stream);
+
+            Assert.AreEqual(obj.TestString, newObj.TestString);
+            Assert.IsNull(newObj.Loop);
+            Assert.IsNull(newObj.Loop2);
         }
 
         [Test]
@@ -271,6 +320,10 @@ namespace fNbt.Test {
 
             NbtSerializer.Write(obj, stream);
             stream.Position = 0;
+            NbtSerializer.Write(obj, stream);
+            stream.Position = 0;
+            NbtSerializer.Write(obj, stream);
+            stream.Position = 0;
 
             var file = new NbtFile();
             file.LoadFromStream(stream, NbtCompression.None);
@@ -278,6 +331,8 @@ namespace fNbt.Test {
 
             var newObj = NbtSerializer.Read<TestObject>(stream);
 
+            Assert.AreEqual((int)obj.TestEnum, file.RootTag[nameof(TestObject.TestEnum)].IntValue);
+            Assert.AreEqual(obj.TestStringEnum.ToString(), file.RootTag[nameof(TestObject.TestStringEnum)].StringValue);
             Assert.AreEqual(obj, newObj);
         }
 
@@ -285,7 +340,8 @@ namespace fNbt.Test {
         public void ObjectDefaultsConvertTest() {
             var obj = new TestObject() {
                 TestInt = 1,
-                TestByte = 2
+                TestByte = 2,
+                TestNullableByte = 3,
             };
 
             var tag = NbtConvert.ToNbt(obj, new NbtSerializerSettings() { NullReferenceHandling = NullReferenceHandling.Ignore });

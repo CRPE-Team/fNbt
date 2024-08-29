@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using fNbt.Serialization.Converters;
 using fNbt.Serialization.Handlings;
-using fNbt.Serialization.NbtObject;
 
 namespace fNbt.Serialization {
     internal class NbtSerializationCache {
