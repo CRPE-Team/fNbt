@@ -9,7 +9,7 @@
 		<Version>0.0.0</Version>
 		<Authors>NiclasOlofsson; kennyvv; DarkLexFirst</Authors>
 		<Company>CRPE-Team</Company>
-		<Description>MiNET fnbt version with support for MCPE 0.16+ varint and string.</Description>
+		<Description>CRPE-MiNET fnbt version with support for MCPE 0.16+ varint and string.</Description>
 		<Copyright>2010-2011 Erik Davidson; 2012-2024 Matvei Stefarov; 2016-2022 Niclas Olofsson</Copyright>
 		<PackageLicenseUrl>https://github.com/CRPE-Team/fNbt/blob/master/docs/LICENSE</PackageLicenseUrl>
 		<PackageProjectUrl>https://github.com/CRPE-Team/fNbt</PackageProjectUrl>
