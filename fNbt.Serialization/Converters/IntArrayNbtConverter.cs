@@ -10,7 +10,7 @@ namespace fNbt.Serialization.Converters {
             return NbtTagType.IntArray;
         }
 
-        public override unsafe object Read(NbtBinaryReader stream, Type type, string name, NbtSerializerSettings settings) {
+        public override unsafe object Read(NbtBinaryReader stream, Type type, object value, string name, NbtSerializerSettings settings) {
             var length = stream.ReadInt32();
             var array = new int[length];
 
@@ -47,7 +47,7 @@ namespace fNbt.Serialization.Converters {
             }
         }
 
-        public override object FromNbt(NbtTag tag, Type type, NbtSerializerSettings settings) {
+        public override object FromNbt(NbtTag tag, Type type, object value, NbtSerializerSettings settings) {
             return tag.IntArrayValue;
         }
 

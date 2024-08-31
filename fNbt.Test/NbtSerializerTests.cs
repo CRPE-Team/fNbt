@@ -430,7 +430,7 @@ namespace fNbt.Test {
                 nbtList.Add(new NbtIntArray(i));
             }
 
-            var converter = new ListNbtConverter() {
+            var converter = new ListNbtConverter(null) {
                 ElementSerializationCache = CreateSerializationCache(new IntArrayNbtConverter(), typeof(int[]))
             };
 
@@ -461,13 +461,13 @@ namespace fNbt.Test {
             var dictCache = CreateSerializationCache(new DictionaryNbtConverter() { ElementSerializationCache = intCache },
                 typeof(Dictionary<,>).MakeGenericType(typeof(string), type));
 
-            return (IDictionary)dictCache.Read(new NbtBinaryReader(stream, NbtFlavor.Default));
+            return (IDictionary)dictCache.Read(new NbtBinaryReader(stream, NbtFlavor.Default), null);
         }
 
         private NbtSerializationCache CreateSerializationCache(NbtConverter converter, Type type) {
             return new NbtSerializationCache() {
                 Converter = converter,
-                Settings = NbtSerializer.DefaultSettings,
+                Settings = NbtSerializerSettings.DefaultSettings,
                 Type = type
             };
         }

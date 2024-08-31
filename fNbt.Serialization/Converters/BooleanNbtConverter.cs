@@ -12,8 +12,8 @@ namespace fNbt.Serialization.Converters {
             return NbtTagType.Byte;
         }
 
-        public override object Read(NbtBinaryReader stream, Type type, string name, NbtSerializerSettings settings) {
-            return Convert.ToBoolean(_underlyingTypeConverter.Read(stream, type, name, settings));
+        public override object Read(NbtBinaryReader stream, Type type, object value, string name, NbtSerializerSettings settings) {
+            return Convert.ToBoolean(_underlyingTypeConverter.Read(stream, type, value, name, settings));
         }
 
         public override void Write(NbtBinaryWriter stream, object value, string name, NbtSerializerSettings settings) {
@@ -24,7 +24,7 @@ namespace fNbt.Serialization.Converters {
             _underlyingTypeConverter.WriteData(stream, Convert.ToByte(value), settings);
         }
 
-        public override object FromNbt(NbtTag tag, Type type, NbtSerializerSettings settings) {
+        public override object FromNbt(NbtTag tag, Type type, object value, NbtSerializerSettings settings) {
             return Convert.ToBoolean(tag.ByteValue);
         }
 

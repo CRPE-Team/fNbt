@@ -10,7 +10,7 @@ namespace fNbt.Serialization.Converters {
             return ((NbtTag)Activator.CreateInstance(type)).TagType;
         }
 
-        public override object Read(NbtBinaryReader stream, Type type, string name, NbtSerializerSettings settings) {
+        public override object Read(NbtBinaryReader stream, Type type, object value, string name, NbtSerializerSettings settings) {
             return ((NbtTag)Activator.CreateInstance(type)).ReadTag(stream);
         }
 
@@ -22,12 +22,12 @@ namespace fNbt.Serialization.Converters {
             ((NbtTag)value).WriteData(stream);
         }
 
-        public override object FromNbt(NbtTag tag, Type type, NbtSerializerSettings settings) {
-            return tag;
+        public override object FromNbt(NbtTag tag, Type type, object value, NbtSerializerSettings settings) {
+            return tag.Clone();
         }
 
         public override NbtTag ToNbt(object value, string name, NbtSerializerSettings settings) {
-            return (NbtTag)value;
+            return (NbtTag)((NbtTag)value).Clone();
         }
     }
 }

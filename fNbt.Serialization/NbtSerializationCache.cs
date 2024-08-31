@@ -6,7 +6,7 @@ using fNbt.Serialization.Handlings;
 namespace fNbt.Serialization {
     internal class NbtSerializationCache {
         [ThreadStatic]
-        private static readonly List<object> _trace = new List<object>();
+        private static List<object> _trace;
 
         public Type Type { get; set; }
 
@@ -20,13 +20,13 @@ namespace fNbt.Serialization {
             if (Converter != null) {
                 return Converter.GetTagType(type, Settings);
             } else if (type != Type) {
-                return NbtSerializer.ObjectNbtConverter.GetTagType(type, Settings);
+                return NbtSerializer.DynamicNbtConverter.GetTagType(type, Settings);
             } else {
                 return NbtTagType.Compound;
             }
         }
 
-        public object Read(NbtBinaryReader stream, string name = null) {
+        public object Read(NbtBinaryReader stream, object value, string name = null) {
             if (name == null) {
                 var tagType = stream.ReadTagType();
 
@@ -38,9 +38,9 @@ namespace fNbt.Serialization {
             }
 
             if (Converter != null && Converter.CanRead) {
-                return Converter.Read(stream, Type, name, Settings);
+                return Converter.Read(stream, Type, value, name, Settings);
             } else {
-                var obj = Activator.CreateInstance(Type);
+                var obj = value ?? Activator.CreateInstance(Type);
 
                 while (ReadProperty(obj, stream)) ;
 
@@ -67,7 +67,7 @@ namespace fNbt.Serialization {
                     Converter.Write(stream, value, name, Settings);
                 } else if (value.GetType() != Type) {
                     if (release) Release(value);
-                    NbtSerializer.ObjectNbtConverter.Write(stream, value, name, Settings);
+                    NbtSerializer.DynamicNbtConverter.Write(stream, value, name, Settings);
                 } else {
                     stream.Write(NbtTagType.Compound);
                     stream.Write(name);
@@ -95,7 +95,7 @@ namespace fNbt.Serialization {
                     Converter.WriteData(stream, value, Settings);
                 } else if (value.GetType() != Type) {
                     if (release) Release(value);
-                    NbtSerializer.ObjectNbtConverter.WriteData(stream, value, Settings);
+                    NbtSerializer.DynamicNbtConverter.WriteData(stream, value, Settings);
                 } else {
                     WriteCompoundData(stream, value);
                 }
@@ -104,16 +104,19 @@ namespace fNbt.Serialization {
             }
         }
 
-        public object FromNbt(NbtTag tag) {
+        public object FromNbt(NbtTag tag, object value) {
             if (Converter != null && Converter.CanRead) {
-                return Converter.FromNbt(tag, Type, Settings);
+                return Converter.FromNbt(tag, Type, value, Settings);
             } else {
-                var obj = Activator.CreateInstance(Type);
+                var obj = value ?? Activator.CreateInstance(Type);
 
                 foreach (var child in tag as NbtCompound) {
-                    if (!Properties.TryGetValue(child.Name, out var property)
-                        && Settings.MissingMemberHandling == MissingMemberHandling.Error) {
-                        throw new NbtSerializationException($"Missing member [{child.Name}]");
+                    if (!Properties.TryGetValue(child.Name, out var property)) {
+                        if (Settings.MissingMemberHandling == MissingMemberHandling.Error) {
+                            throw new NbtSerializationException($"Missing member [{child.Name}]");
+                        }
+
+                        continue;
                     }
 
                     property.FromNbt(obj, child);
@@ -142,7 +145,7 @@ namespace fNbt.Serialization {
                     return Converter.ToNbt(value, name, Settings);
                 } else if (value != null && value.GetType() != Type) {
                     if (release) Release(value);
-                    return NbtSerializer.ObjectNbtConverter.ToNbt(value, name, Settings);
+                    return NbtSerializer.DynamicNbtConverter.ToNbt(value, name, Settings);
                 } else {
                     var compound = new NbtCompound(name);
 
@@ -201,6 +204,7 @@ namespace fNbt.Serialization {
             enabled = value != null && Settings.LoopReferenceHandling != LoopReferenceHandling.Serialize;
 
             if (enabled) {
+                _trace ??= new List<object>();
                 if ( _trace.Contains(value)) {
                     if (Settings.LoopReferenceHandling == LoopReferenceHandling.Error) {
                         throw new NbtSerializationException($"Loop reference on type [{Type}] detected");
@@ -277,7 +281,7 @@ namespace fNbt.Serialization {
         }
 
         private void Release(object value) {
-            _trace.Remove(value);
+            _trace?.Remove(value);
         }
 
         private object Default() {

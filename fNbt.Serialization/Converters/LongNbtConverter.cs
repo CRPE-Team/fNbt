@@ -11,7 +11,7 @@ namespace fNbt.Serialization.Converters {
             return NbtTagType.Long;
         }
 
-        public override object Read(NbtBinaryReader stream, Type type, string name, NbtSerializerSettings settings) {
+        public override object Read(NbtBinaryReader stream, Type type, object value, string name, NbtSerializerSettings settings) {
             return stream.ReadInt64();
         }
 
@@ -25,7 +25,7 @@ namespace fNbt.Serialization.Converters {
             stream.Write((long)value);
         }
 
-        public override object FromNbt(NbtTag tag, Type type, NbtSerializerSettings settings) {
+        public override object FromNbt(NbtTag tag, Type type, object value, NbtSerializerSettings settings) {
             return tag.LongValue;
         }
 

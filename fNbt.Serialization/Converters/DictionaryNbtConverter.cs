@@ -16,11 +16,11 @@ namespace fNbt.Serialization.Converters {
             return NbtTagType.Compound;
         }
 
-        public override object Read(NbtBinaryReader stream, Type type, string name, NbtSerializerSettings settings) {
+        public override object Read(NbtBinaryReader stream, Type type, object value, string name, NbtSerializerSettings settings) {
             var dictionary = (IDictionary)Activator.CreateInstance(type);
 
-            while (ReadProperty(stream, out var valueName, out var value)) {
-                dictionary.Add(valueName, value);
+            while (ReadProperty(stream, out var valueName, out var val)) {
+                dictionary.Add(valueName, val);
             }
 
             return dictionary;
@@ -50,11 +50,11 @@ namespace fNbt.Serialization.Converters {
             stream.Write(NbtTagType.End);
         }
 
-        public override object FromNbt(NbtTag tag, Type type, NbtSerializerSettings settings) {
+        public override object FromNbt(NbtTag tag, Type type, object value, NbtSerializerSettings settings) {
             var dictionary = (IDictionary)Activator.CreateInstance(type);
 
             foreach (var child in tag as NbtCompound) {
-                dictionary.Add(child.Name, ElementSerializationCache.FromNbt(child));
+                dictionary.Add(child.Name, ElementSerializationCache.FromNbt(child, null));
             }
 
             return dictionary;
@@ -95,7 +95,7 @@ namespace fNbt.Serialization.Converters {
             }
 
             name = stream.ReadString();
-            obj = ElementSerializationCache.Read(stream, name);
+            obj = ElementSerializationCache.Read(stream, null, name);
             return true;
         }
     }

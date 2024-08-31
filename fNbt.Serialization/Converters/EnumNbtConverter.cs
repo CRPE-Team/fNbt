@@ -12,8 +12,8 @@ namespace fNbt.Serialization.Converters {
             return _underlyingTypeConverter.GetTagType(type, settings);
         }
 
-        public override unsafe object Read(NbtBinaryReader stream, Type type, string name, NbtSerializerSettings settings) {
-            return Enum.Parse(type, (string)_underlyingTypeConverter.Read(stream, type, name, settings));
+        public override unsafe object Read(NbtBinaryReader stream, Type type, object value, string name, NbtSerializerSettings settings) {
+            return Enum.Parse(type, (string)_underlyingTypeConverter.Read(stream, type, value, name, settings));
         }
 
         public override void Write(NbtBinaryWriter stream, object value, string name, NbtSerializerSettings settings) {
@@ -24,8 +24,8 @@ namespace fNbt.Serialization.Converters {
             _underlyingTypeConverter.WriteData(stream, value, settings);
         }
 
-        public override object FromNbt(NbtTag tag, Type type, NbtSerializerSettings settings) {
-            return Enum.Parse(type, (string)_underlyingTypeConverter.FromNbt(tag, type, settings));
+        public override object FromNbt(NbtTag tag, Type type, object value, NbtSerializerSettings settings) {
+            return Enum.Parse(type, (string)_underlyingTypeConverter.FromNbt(tag, type, value, settings));
         }
 
         public override NbtTag ToNbt(object value, string name, NbtSerializerSettings settings) {

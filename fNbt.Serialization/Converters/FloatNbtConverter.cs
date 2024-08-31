@@ -10,7 +10,7 @@ namespace fNbt.Serialization.Converters {
             return NbtTagType.Float;
         }
 
-        public override object Read(NbtBinaryReader stream, Type type, string name, NbtSerializerSettings settings) {
+        public override object Read(NbtBinaryReader stream, Type type, object value, string name, NbtSerializerSettings settings) {
             return stream.ReadSingle();
         }
 
@@ -24,7 +24,7 @@ namespace fNbt.Serialization.Converters {
             stream.Write((float)value);
         }
 
-        public override object FromNbt(NbtTag tag, Type type, NbtSerializerSettings settings) {
+        public override object FromNbt(NbtTag tag, Type type, object value, NbtSerializerSettings settings) {
             return tag.FloatValue;
         }
 

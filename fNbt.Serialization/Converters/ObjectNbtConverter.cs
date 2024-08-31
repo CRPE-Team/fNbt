@@ -3,31 +3,31 @@
 namespace fNbt.Serialization.Converters {
     public class ObjectNbtConverter : NbtConverter {
         public override bool CanConvert(Type type) {
-            return type == typeof(object);
+            return false;
         }
 
         public override NbtTagType GetTagType(Type type, NbtSerializerSettings settings) {
-            return NbtSerializer.GetTagTypeInternal(type, settings);
+            return SerializationDescriber.Describe(type, settings, null, true).GetTagType(type);
         }
 
-        public override object Read(NbtBinaryReader stream, Type type, string name, NbtSerializerSettings settings) {
-            return NbtSerializer.ReadInternal(type, stream, name, settings);
+        public override object Read(NbtBinaryReader stream, Type type, object value, string name, NbtSerializerSettings settings) {
+            return SerializationDescriber.Describe(type, settings, null, true).Read(stream, value, name);
         }
 
         public override void Write(NbtBinaryWriter stream, object value, string name, NbtSerializerSettings settings) {
-            NbtSerializer.WriteInternal(value, stream, name, settings);
+            SerializationDescriber.Describe(value?.GetType(), settings, null, true).Write(stream, value, name);
         }
 
         public override void WriteData(NbtBinaryWriter stream, object value, NbtSerializerSettings settings) {
-            NbtSerializer.WriteDataInternal(value, stream, settings);
+            SerializationDescriber.Describe(value?.GetType(), settings, null, true).WriteData(stream, value);
         }
 
-        public override object FromNbt(NbtTag tag, Type type, NbtSerializerSettings settings) {
-            return NbtSerializer.FromNbtInternal(type, tag, settings);
+        public override object FromNbt(NbtTag tag, Type type, object value, NbtSerializerSettings settings) {
+            return SerializationDescriber.Describe(type, settings, null, true).FromNbt(tag, value);
         }
 
         public override NbtTag ToNbt(object value, string name, NbtSerializerSettings settings) {
-            return NbtSerializer.ToNbtInternal(value, name, settings);
+            return SerializationDescriber.Describe(value?.GetType(), settings, null, true).ToNbt(value, name);
         }
     }
 }

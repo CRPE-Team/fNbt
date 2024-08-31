@@ -9,15 +9,18 @@ namespace fNbt.Serialization {
 
         public Type PropertyConverterType { get; set; }
 
+        public bool SkipConverter { get; set; }
+
         public override bool Equals(object obj) {
             return obj is NbtSerializationProfile profile &&
                    EqualityComparer<Type>.Default.Equals(ObjectType, profile.ObjectType) &&
                    EqualityComparer<NbtSerializerSettings>.Default.Equals(Settings, profile.Settings) &&
-                   EqualityComparer<Type>.Default.Equals(PropertyConverterType, profile.PropertyConverterType);
+                   EqualityComparer<Type>.Default.Equals(PropertyConverterType, profile.PropertyConverterType) &&
+                   SkipConverter == profile.SkipConverter;
         }
 
         public override int GetHashCode() {
-            return HashCode.Combine(ObjectType, Settings, PropertyConverterType);
+            return HashCode.Combine(ObjectType, Settings, PropertyConverterType, SkipConverter);
         }
     }
 }

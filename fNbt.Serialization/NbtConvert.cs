@@ -21,7 +21,11 @@ namespace fNbt.Serialization {
         }
 
         public static object FromNbt(Type type, NbtTag tag, NbtSerializerSettings settings = null) {
-            return NbtSerializer.FromNbtInternal(type, tag, settings);
+            return NbtSerializer.FromNbtInternal(type, tag, null, settings);
+        }
+
+        public static object FromNbt(object value, NbtTag tag, NbtSerializerSettings settings = null) {
+            return NbtSerializer.FromNbtInternal(value.GetType(), tag, value, settings);
         }
 
         public static NbtFile ToNbtFile(object value, NbtSerializerSettings settings = null) {

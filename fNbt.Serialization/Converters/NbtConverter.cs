@@ -9,11 +9,11 @@ namespace fNbt.Serialization.Converters {
 
         public abstract NbtTagType GetTagType(Type type, NbtSerializerSettings settings);
 
-        public abstract object Read(NbtBinaryReader stream, Type type, string name, NbtSerializerSettings settings);
+        public abstract object Read(NbtBinaryReader stream, Type type, object value, string name, NbtSerializerSettings settings);
         public abstract void Write(NbtBinaryWriter stream, object value, string name, NbtSerializerSettings settings);
         public abstract void WriteData(NbtBinaryWriter stream, object value, NbtSerializerSettings settings);
 
-        public abstract object FromNbt(NbtTag tag, Type type, NbtSerializerSettings settings);
+        public abstract object FromNbt(NbtTag tag, Type type, object value, NbtSerializerSettings settings);
         public abstract NbtTag ToNbt(object value, string name, NbtSerializerSettings settings);
 
         public override bool Equals(object obj) {

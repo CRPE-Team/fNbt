@@ -1,36 +1,33 @@
 ﻿using System;
 
 namespace fNbt.Serialization.Converters {
-    public class IntNbtConverter : NbtConverter {
+    public class DynamicNbtConverter : NbtConverter {
         public override bool CanConvert(Type type) {
-            return type == typeof(int)
-                || type == typeof(uint);
+            return type == typeof(object);
         }
 
         public override NbtTagType GetTagType(Type type, NbtSerializerSettings settings) {
-            return NbtTagType.Int;
+            return NbtSerializer.GetTagTypeInternal(type, settings);
         }
 
         public override object Read(NbtBinaryReader stream, Type type, object value, string name, NbtSerializerSettings settings) {
-            return stream.ReadInt32();
+            return NbtSerializer.ReadInternal(type, stream, value, name, settings);
         }
 
         public override void Write(NbtBinaryWriter stream, object value, string name, NbtSerializerSettings settings) {
-            stream.Write(NbtTagType.Int);
-            stream.Write(name);
-            WriteData(stream, value, settings);
+            NbtSerializer.WriteInternal(value, stream, name, settings);
         }
 
         public override void WriteData(NbtBinaryWriter stream, object value, NbtSerializerSettings settings) {
-            stream.Write((int)value);
+            NbtSerializer.WriteDataInternal(value, stream, settings);
         }
 
         public override object FromNbt(NbtTag tag, Type type, object value, NbtSerializerSettings settings) {
-            return tag.IntValue;
+            return NbtSerializer.FromNbtInternal(type, tag, value, settings);
         }
 
         public override NbtTag ToNbt(object value, string name, NbtSerializerSettings settings) {
-            return new NbtInt(name, (int)value);
+            return NbtSerializer.ToNbtInternal(value, name, settings);
         }
     }
 }

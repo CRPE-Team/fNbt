@@ -1,32 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using fNbt.Serialization.Converters;
-using fNbt.Serialization.NamingStrategy;
 
 namespace fNbt.Serialization {
     public static class NbtSerializer {
-        public static NbtSerializerSettings DefaultSettings { get; } = new NbtSerializerSettings() {
-            NamingStrategy = new DefaultNbtNamingStrategy(),
-            Converters = new List<NbtConverter>() {
-                new ByteArrayNbtConverter(),
-                new ByteNbtConverter(),
-                new DoubleNbtConverter(),
-                new FloatNbtConverter(),
-                new IntArrayNbtConverter(),
-                new IntNbtConverter(),
-                new LongArrayNbtConverter(),
-                new LongNbtConverter(),
-                new ShortNbtConverter(),
-                new StringNbtConverter(),
-                new TagNbtConverter()
-            }
-        };
-
-        internal static ObjectNbtConverter ObjectNbtConverter { get; } = new ObjectNbtConverter();
+        internal static DynamicNbtConverter DynamicNbtConverter { get; } = new DynamicNbtConverter();
 
         public static T Read<T>(Stream stream, NbtSerializerSettings settings = null) {
-            return Read<T>(new NbtBinaryReader(stream, settings?.Flavor ?? DefaultSettings.Flavor), settings);
+            return Read<T>(new NbtBinaryReader(stream, settings?.Flavor ?? NbtSerializerSettings.DefaultSettings.Flavor), settings);
         }
 
         public static T Read<T>(NbtBinaryReader stream, NbtSerializerSettings settings = null) {
@@ -34,11 +15,11 @@ namespace fNbt.Serialization {
         }
 
         public static object Read(Type type, NbtBinaryReader stream, NbtSerializerSettings settings = null) {
-            return ReadInternal(type, stream, null, settings);
+            return ReadInternal(type, stream, null, null, settings);
         }
 
         public static void Write(object value, Stream stream, NbtSerializerSettings settings = null) {
-            WriteInternal(value, new NbtBinaryWriter(stream, settings?.Flavor ?? DefaultSettings.Flavor), string.Empty, settings);
+            WriteInternal(value, new NbtBinaryWriter(stream, settings?.Flavor ?? NbtSerializerSettings.DefaultSettings.Flavor), string.Empty, settings);
         }
 
         public static void Write(object value, NbtBinaryWriter stream, NbtSerializerSettings settings = null) {
@@ -49,8 +30,8 @@ namespace fNbt.Serialization {
             return SerializationDescriber.Describe(type, settings).GetTagType(type);
         }
 
-        internal static object ReadInternal(Type type, NbtBinaryReader stream, string name, NbtSerializerSettings settings) {
-            return SerializationDescriber.Describe(type, settings).Read(stream, name);
+        internal static object ReadInternal(Type type, NbtBinaryReader stream, object value, string name, NbtSerializerSettings settings) {
+            return SerializationDescriber.Describe(type, settings).Read(stream, value, name);
         }
 
         internal static void WriteInternal(object value, NbtBinaryWriter stream, string name, NbtSerializerSettings settings) {
@@ -67,8 +48,8 @@ namespace fNbt.Serialization {
             SerializationDescriber.Describe(value.GetType(), settings).WriteData(stream, value);
         }
 
-        internal static object FromNbtInternal(Type type, NbtTag tag, NbtSerializerSettings settings) {
-            return SerializationDescriber.Describe(type, settings).FromNbt(tag);
+        internal static object FromNbtInternal(Type type, NbtTag tag, object value, NbtSerializerSettings settings) {
+            return SerializationDescriber.Describe(type, settings).FromNbt(tag, value);
         }
 
         internal static NbtTag ToNbtInternal(object value, string name, NbtSerializerSettings settings) {
