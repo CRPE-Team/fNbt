@@ -15,13 +15,6 @@ namespace fNbt.Serialization {
         public NbtSerializerSettings Settings { get; set; }
 
         public void Read(object obj, NbtBinaryReader stream) {
-            if (Set == null) {
-                if (Settings.PropertySetHandling == Handlings.PropertySetHandling.Error) {
-                    throw new NbtSerializationException($"set method of property [{Type}.{Name}] is not implemented");
-                }
-                return;
-            }
-
             if (Get == null) {
                 if (Settings.PropertyGetHandling == Handlings.PropertyGetHandling.Error) {
                     throw new NbtSerializationException($"get method of property [{Type}.{Name}] is not implemented");
@@ -29,7 +22,17 @@ namespace fNbt.Serialization {
                 return;
             }
 
-            Set(obj, [SerializationCache.Read(stream, Get(obj, []), Name)]);
+            var value = Get(obj, []);
+            value = SerializationCache.Read(stream, value, Name);
+
+            if (Set == null && value == null) {
+                if (Settings.PropertySetHandling == Handlings.PropertySetHandling.Error) {
+                    throw new NbtSerializationException($"set method of property [{Type}.{Name}] is not implemented");
+                }
+                return;
+            }
+
+            Set(obj, [value]);
         }
 
         public void Write(object obj, NbtBinaryWriter stream) {
@@ -43,13 +46,6 @@ namespace fNbt.Serialization {
         }
 
         public void FromNbt(object obj, NbtTag tag) {
-            if (Set == null) {
-                if (Settings.PropertySetHandling == Handlings.PropertySetHandling.Error) {
-                    throw new NbtSerializationException($"set method of property [{Type}.{Name}] is not implemented");
-                }
-                return;
-            }
-
             if (Get == null) {
                 if (Settings.PropertyGetHandling == Handlings.PropertyGetHandling.Error) {
                     throw new NbtSerializationException($"get method of property [{Type}.{Name}] is not implemented");
@@ -57,7 +53,18 @@ namespace fNbt.Serialization {
                 return;
             }
 
-            Set(obj, [SerializationCache.FromNbt(tag, Get(obj, []))]);
+            var value = Get(obj, []);
+            value = SerializationCache.FromNbt(tag, value);
+
+            if (Set == null) {
+                if (Settings.PropertySetHandling == Handlings.PropertySetHandling.Error) {
+                    throw new NbtSerializationException($"set method of property [{Type}.{Name}] is not implemented");
+                }
+
+                return;
+            }
+
+            Set(obj, [value]);
         }
 
         public NbtTag ToNbt(object obj) {
