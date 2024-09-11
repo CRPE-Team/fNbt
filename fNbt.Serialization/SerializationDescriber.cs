@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
 using System.Reflection;
 using fNbt.Serialization.Converters;
 
@@ -99,48 +101,62 @@ namespace fNbt.Serialization {
             _cache.TryAdd(profile, cache);
 
             try {
-                var properties = type.GetProperties();
+                var publicInstance = BindingFlags.Public | BindingFlags.Instance;
+                var nonPublicInstance = BindingFlags.NonPublic | BindingFlags.Instance;
 
-                foreach (var property in properties) {
-                    if (property.GetCustomAttribute<NbtIgnoreAttribute>() != null) {
+                var publicMembers = GetAndValidateProperties(type, publicInstance)
+                    .Cast<MemberInfo>()
+                    .Concat(type.GetFields(publicInstance));
+
+                var nonPublicMembers = GetAndValidateProperties(type, nonPublicInstance)
+                    .Cast<MemberInfo>()
+                    .Concat(type.GetFields(nonPublicInstance))
+                    .Where(member => member.GetCustomAttributes().Any(atr => typeof(NbtPropertyAttribute).IsAssignableFrom(atr.GetType())));
+
+                var members = publicMembers.Concat(nonPublicMembers);
+
+                foreach (var member in members) {
+                    var memberType = GetMemberType(member);
+
+                    if (member.GetCustomAttribute<NbtIgnoreAttribute>() != null) {
                         continue;
                     }
-                    if (property.PropertyType.GetCustomAttribute<NbtIgnoreAttribute>() != null) {
+                    if (memberType.GetCustomAttribute<NbtIgnoreAttribute>() != null) {
                         continue;
                     }
 
-                    var flatAtr = property.GetCustomAttribute<NbtFlatPropertyAttribute>();
-                    var atr = flatAtr ?? property.GetCustomAttribute<NbtPropertyAttribute>();
-                    if (settings.NbtPropertyHandling == Handlings.NbtPropertyHandling.MarkedOnly 
+                    var flatAtr = member.GetCustomAttribute<NbtFlatPropertyAttribute>();
+                    var atr = flatAtr ?? member.GetCustomAttribute<NbtPropertyAttribute>();
+                    if (settings.NbtMemberHandling == Handlings.NbtMemberHandling.MarkedOnly 
                         && atr == null
                         && type.GetCustomAttribute<NbtObjectAttribute>() == null) {
                         continue;
                     }
 
                     var namingStrategy = settings.NamingStrategy ?? NbtSerializerSettings.DefaultSettings.NamingStrategy;
-                    var propertyCache = Describe(property.PropertyType, settings, atr);
+                    var memberCache = Describe(memberType, settings, atr);
 
-                    if (flatAtr == null || propertyCache.Converter != null) {
+                    if (flatAtr == null || memberCache.Converter != null) {
                         var name = atr?.Name
-                        ?? namingStrategy.ResolvePropertyName(property.Name);
+                        ?? namingStrategy.ResolveMemberName(member.Name);
 
-                        cache.Properties.Add(name, CreateProperty(property, propertyCache, name, settings));
+                        cache.Members.Add(name, CreateMember(member, memberCache, name, settings));
                     } else {
                         var flatNamingStrategy = flatAtr.NamingStrategy ?? namingStrategy;
 
-                        foreach (var flatProperty in propertyCache.Properties) {
-                            var flatNbtProperty = (NbtSerializationProperty)flatProperty.Value.Clone();
-                            flatNbtProperty.Name = flatNamingStrategy.ResolvePropertyName(flatNbtProperty.Origin.Name);
+                        foreach (var flatMember in memberCache.Members) {
+                            var flatNbtMember = (INbtSerializationMember)flatMember.Value.Clone();
+                            flatNbtMember.Name = flatNamingStrategy.ResolveMemberName(flatNbtMember.Origin.Name);
 
                             var flatCache = new NbtSerializationCache() {
-                                Type = propertyCache.Type,
-                                Settings = propertyCache.Settings,
-                                Converter = new FlatPropertyConverter() {
-                                    Property = flatProperty.Value
+                                Type = memberCache.Type,
+                                Settings = memberCache.Settings,
+                                Converter = new FlatMemberConverter() {
+                                    Member = flatNbtMember
                                 }
                             };
 
-                            cache.Properties.Add(flatNbtProperty.Name, CreateProperty(property, flatCache, flatNbtProperty.Name, settings));
+                            cache.Members.Add(flatNbtMember.Name, CreateMember(member, flatCache, flatNbtMember.Name, settings));
                         }
                     }
                 }
@@ -151,6 +167,41 @@ namespace fNbt.Serialization {
             }
 
             return cache;
+        }
+
+        private static Type GetMemberType(MemberInfo member) {
+            if (member is PropertyInfo propertyInfo) {
+                return propertyInfo.PropertyType;
+            } else if (member is FieldInfo fieldInfo) {
+                return fieldInfo.FieldType;
+            }
+
+            throw new NbtSerializationException($"member type [{member.GetType().Name}] is not supported");
+        }
+
+        private static INbtSerializationMember CreateMember(MemberInfo member, NbtSerializationCache cache, string name, NbtSerializerSettings settings) {
+            if (member is PropertyInfo propertyInfo) {
+                return CreateProperty(propertyInfo, cache, name, settings);
+            } else if (member is FieldInfo fieldInfo) {
+                return CreateField(fieldInfo, cache, name, settings);
+            }
+
+            throw new NbtSerializationException($"member type [{member.GetType().Name}] is not supported");
+        }
+
+        private static NbtSerializationField CreateField(FieldInfo fieldInfo, NbtSerializationCache cache, string name, NbtSerializerSettings settings) {
+            var nbtField = new NbtSerializationField() {
+                Type = fieldInfo.FieldType,
+                Name = name,
+                Origin = fieldInfo,
+                SerializationCache = cache,
+                Settings = settings,
+
+                Get = fieldInfo.GetValue,
+                Set = fieldInfo.SetValue,
+            };
+
+            return nbtField;
         }
 
         private static NbtSerializationProperty CreateProperty(PropertyInfo propertyInfo, NbtSerializationCache cache, string name, NbtSerializerSettings settings) {
@@ -170,6 +221,14 @@ namespace fNbt.Serialization {
             }
 
             return nbtProperty;
+        }
+
+        private static IEnumerable<PropertyInfo> GetAndValidateProperties(Type type, BindingFlags bindingFlags) {
+            // Because GetProperties may return NOT properties
+
+            return type.GetProperties(bindingFlags)
+                .Where(p => (p.GetMethod == null || !p.GetMethod.GetParameters().Any())
+                    && (p.SetMethod == null || p.SetMethod.GetParameters().SingleOrDefault()?.ParameterType == p.PropertyType));
         }
     }
 }

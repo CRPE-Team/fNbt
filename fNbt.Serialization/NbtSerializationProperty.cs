@@ -2,12 +2,12 @@
 using System.Reflection;
 
 namespace fNbt.Serialization {
-    internal class NbtSerializationProperty : ICloneable {
+    internal class NbtSerializationProperty : INbtSerializationMember {
         public Type Type { get; set; }
 
         public string Name { get; set; }
 
-        public PropertyInfo Origin { get; set; }
+        public MemberInfo Origin { get; set; }
 
         public Func<object, object[], object> Get { get; set; }
 

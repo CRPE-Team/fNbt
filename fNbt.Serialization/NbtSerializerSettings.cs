@@ -12,7 +12,7 @@ namespace fNbt.Serialization {
         private MissingMemberHandling? _missingMemberHandling;
         private NullReferenceHandling? _nullReferenceHandling;
         private LoopReferenceHandling? _loopReferenceHandling;
-        private NbtPropertyHandling? _nbtPropertyHandling;
+        private NbtMemberHandling? _nbtMemberHandling;
         private NbtFlavor _flavor;
         private NbtNamingStrategy _namingStrategy;
 
@@ -22,7 +22,7 @@ namespace fNbt.Serialization {
             MissingMemberHandling = MissingMemberHandling.Default,
             NullReferenceHandling = NullReferenceHandling.Default,
             LoopReferenceHandling = LoopReferenceHandling.Default,
-            NbtPropertyHandling = NbtPropertyHandling.Default,
+            NbtMemberHandling = NbtMemberHandling.Default,
 
             NamingStrategy = new DefaultNbtNamingStrategy(),
             Flavor = NbtFlavor.Default,
@@ -108,12 +108,12 @@ namespace fNbt.Serialization {
             }
         }
 
-        public NbtPropertyHandling NbtPropertyHandling {
+        public NbtMemberHandling NbtMemberHandling {
             get {
-                return _nbtPropertyHandling ?? DefaultSettings._nbtPropertyHandling.Value;
+                return _nbtMemberHandling ?? DefaultSettings._nbtMemberHandling.Value;
             }
             set {
-                _nbtPropertyHandling = value;
+                _nbtMemberHandling = value;
             }
         }
 
@@ -127,7 +127,7 @@ namespace fNbt.Serialization {
                    MissingMemberHandling == settings.MissingMemberHandling &&
                    NullReferenceHandling == settings.NullReferenceHandling &&
                    LoopReferenceHandling == settings.LoopReferenceHandling &&
-                   NbtPropertyHandling == settings.NbtPropertyHandling;
+                   NbtMemberHandling == settings.NbtMemberHandling;
         }
 
         public override int GetHashCode() {
@@ -141,7 +141,7 @@ namespace fNbt.Serialization {
             hash.Add(MissingMemberHandling);
             hash.Add(NullReferenceHandling);
             hash.Add(LoopReferenceHandling);
-            hash.Add(NbtPropertyHandling);
+            hash.Add(NbtMemberHandling);
 
             return hash.ToHashCode();
         }

@@ -19,7 +19,7 @@ namespace fNbt.Serialization.Converters {
         public override object Read(NbtBinaryReader stream, Type type, object value, string name, NbtSerializerSettings settings) {
             var dictionary = (IDictionary)Activator.CreateInstance(type);
 
-            while (ReadProperty(stream, out var valueName, out var val)) {
+            while (ReadMember(stream, out var valueName, out var val)) {
                 dictionary.Add(valueName, val);
             }
 
@@ -83,7 +83,7 @@ namespace fNbt.Serialization.Converters {
             return compound;
         }
 
-        private bool ReadProperty(NbtBinaryReader stream, out string name, out object obj) {
+        private bool ReadMember(NbtBinaryReader stream, out string name, out object obj) {
             name = null;
             obj = null;
             var tagType = stream.ReadTagType();

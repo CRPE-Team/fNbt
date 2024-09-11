@@ -2,7 +2,7 @@
 using fNbt.Serialization.Converters;
 
 namespace fNbt.Serialization {
-    [AttributeUsage(AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
     public class NbtPropertyAttribute : Attribute {
         public string Name { get; }
         public Type ConverterType { get; }

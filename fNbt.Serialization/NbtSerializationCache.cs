@@ -10,7 +10,7 @@ namespace fNbt.Serialization {
 
         public Type Type { get; set; }
 
-        public Dictionary<string, NbtSerializationProperty> Properties { get; set; } = new Dictionary<string, NbtSerializationProperty>();
+        public Dictionary<string, INbtSerializationMember> Members { get; set; } = new Dictionary<string, INbtSerializationMember>();
 
         public NbtConverter Converter { get; set; }
 
@@ -42,7 +42,7 @@ namespace fNbt.Serialization {
             } else {
                 var obj = value ?? Activator.CreateInstance(Type);
 
-                while (ReadProperty(obj, stream)) ;
+                while (ReadMember(obj, stream)) ;
 
                 return obj;
             }
@@ -111,7 +111,7 @@ namespace fNbt.Serialization {
                 var obj = value ?? Activator.CreateInstance(Type);
 
                 foreach (var child in tag as NbtCompound) {
-                    if (!Properties.TryGetValue(child.Name, out var property)) {
+                    if (!Members.TryGetValue(child.Name, out var member)) {
                         if (Settings.MissingMemberHandling == MissingMemberHandling.Error) {
                             throw new NbtSerializationException($"Missing member [{child.Name}]");
                         }
@@ -119,7 +119,7 @@ namespace fNbt.Serialization {
                         continue;
                     }
 
-                    property.FromNbt(obj, child);
+                    member.FromNbt(obj, child);
                 }
 
                 return obj;
@@ -149,8 +149,8 @@ namespace fNbt.Serialization {
                 } else {
                     var compound = new NbtCompound(name);
 
-                    foreach (var property in Properties.Values) {
-                        var tag = property.ToNbt(value);
+                    foreach (var member in Members.Values) {
+                        var tag = member.ToNbt(value);
 
                         if (tag != null) {
                             compound.Add(tag);
@@ -164,7 +164,7 @@ namespace fNbt.Serialization {
             }
         }
 
-        private bool ReadProperty(object obj, NbtBinaryReader stream) {
+        private bool ReadMember(object obj, NbtBinaryReader stream) {
             var tagType = stream.ReadTagType();
 
             if (tagType == NbtTagType.End) return false;
@@ -175,7 +175,7 @@ namespace fNbt.Serialization {
 
             var name = stream.ReadString();
 
-            if (!Properties.TryGetValue(name, out var property)) {
+            if (!Members.TryGetValue(name, out var member)) {
                 if (Settings.MissingMemberHandling == MissingMemberHandling.Error) {
                     throw new NbtSerializationException($"Missing member [{name}]");
                 }
@@ -185,14 +185,14 @@ namespace fNbt.Serialization {
                 return true;
             }
 
-            property.Read(obj, stream);
+            member.Read(obj, stream);
             return true;
         }
 
         private void WriteCompoundData(NbtBinaryWriter stream, object value) {
             if (value != null) {
-                foreach (var property in Properties.Values) {
-                    property.Write(value, stream);
+                foreach (var member in Members.Values) {
+                    member.Write(value, stream);
                 }
             }
 

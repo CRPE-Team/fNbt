@@ -2,7 +2,7 @@
 using fNbt.Serialization.NamingStrategy;
 
 namespace fNbt.Serialization {
-    [AttributeUsage(AttributeTargets.Property)]
+    [AttributeUsage(AttributeTargets.Property | AttributeTargets.Field)]
     public class NbtFlatPropertyAttribute : NbtPropertyAttribute {
         public NbtNamingStrategy NamingStrategy { get; }
 

@@ -1,5 +1,5 @@
 ﻿namespace fNbt.Serialization.Handlings {
-    public enum NbtPropertyHandling {
+    public enum NbtMemberHandling {
         All = 1,
         MarkedOnly = 2,
 
