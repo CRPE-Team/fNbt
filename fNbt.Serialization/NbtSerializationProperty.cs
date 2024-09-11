@@ -1,10 +1,13 @@
 ﻿using System;
+using System.Reflection;
 
 namespace fNbt.Serialization {
-    internal class NbtSerializationProperty {
+    internal class NbtSerializationProperty : ICloneable {
         public Type Type { get; set; }
 
         public string Name { get; set; }
+
+        public PropertyInfo Origin { get; set; }
 
         public Func<object, object[], object> Get { get; set; }
 
@@ -77,6 +80,10 @@ namespace fNbt.Serialization {
             } else {
                 return SerializationCache.ToNbt(Get(obj, []), Name);
             }
+        }
+
+        public object Clone() {
+            return MemberwiseClone();
         }
     }
 }

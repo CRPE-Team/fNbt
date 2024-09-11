@@ -71,6 +71,7 @@ namespace fNbt.Serialization {
                 _propertyGetHandling = value;
             }
         }
+
         public PropertySetHandling PropertySetHandling {
             get {
                 return _propertySetHandling ?? DefaultSettings._propertySetHandling.Value;
@@ -79,6 +80,7 @@ namespace fNbt.Serialization {
                 _propertySetHandling = value;
             }
         }
+
         public MissingMemberHandling MissingMemberHandling {
             get {
                 return _missingMemberHandling ?? DefaultSettings._missingMemberHandling.Value;
@@ -87,6 +89,7 @@ namespace fNbt.Serialization {
                 _missingMemberHandling = value;
             }
         }
+
         public NullReferenceHandling NullReferenceHandling {
             get {
                 return _nullReferenceHandling ?? DefaultSettings._nullReferenceHandling.Value;
@@ -95,6 +98,7 @@ namespace fNbt.Serialization {
                 _nullReferenceHandling = value;
             }
         }
+
         public LoopReferenceHandling LoopReferenceHandling {
             get {
                 return _loopReferenceHandling ?? DefaultSettings._loopReferenceHandling.Value;
@@ -103,6 +107,7 @@ namespace fNbt.Serialization {
                 _loopReferenceHandling = value;
             }
         }
+
         public NbtPropertyHandling NbtPropertyHandling {
             get {
                 return _nbtPropertyHandling ?? DefaultSettings._nbtPropertyHandling.Value;
@@ -111,6 +116,7 @@ namespace fNbt.Serialization {
                 _nbtPropertyHandling = value;
             }
         }
+
         public override bool Equals(object obj) {
             return obj is NbtSerializerSettings settings &&
                    EqualityComparer<NbtFlavor>.Default.Equals(Flavor, settings.Flavor) &&

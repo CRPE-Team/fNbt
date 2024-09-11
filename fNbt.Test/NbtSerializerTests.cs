@@ -177,6 +177,76 @@ namespace fNbt.Test {
             public string TestString { get; set; }
 
             public string TestString2 { get; set; }
+
+            public override bool Equals(object obj) {
+                return obj is TwoMembersObject @object &&
+                       TestString == @object.TestString &&
+                       TestString2 == @object.TestString2;
+            }
+
+            public override int GetHashCode() {
+                return HashCode.Combine(TestString, TestString2);
+            }
+        }
+
+        public class FlatObject {
+
+            public int TestInt { get; set; }
+
+            [NbtFlatProperty]
+            public TwoMembersObject TestObj { get; set; }
+
+            public override bool Equals(object obj) {
+                return obj is FlatObject @object &&
+                       TestInt == @object.TestInt &&
+                       EqualityComparer<TwoMembersObject>.Default.Equals(TestObj, @object.TestObj);
+            }
+
+            public override int GetHashCode() {
+                return HashCode.Combine(TestInt, TestObj);
+            }
+        }
+
+        public class RealFlatObject : TwoMembersObject {
+
+            public int TestInt { get; set; }
+        }
+
+        [Test]
+        public void FlatSerializationTest() {
+            var obj = new FlatObject() {
+                TestInt = 123,
+                TestObj = new TwoMembersObject() {
+                    TestString = "test val",
+                    TestString2 = "test val 2"
+                }
+            };
+
+            var stream = new MemoryStream();
+            NbtSerializer.Write(obj, stream);
+            stream.Position = 0;
+
+            var newObj = NbtSerializer.Read<RealFlatObject>(stream);
+
+            Assert.AreEqual(obj.TestInt, newObj.TestInt);
+            Assert.AreEqual(obj.TestObj.TestString, newObj.TestString);
+            Assert.AreEqual(obj.TestObj.TestString2, newObj.TestString2);
+        }
+
+        [Test]
+        public void FlatConvertTest() {
+            var obj = new FlatObject() {
+                TestInt = 123,
+                TestObj = new TwoMembersObject() {
+                    TestString = "test val",
+                    TestString2 = "test val 2"
+                }
+            };
+
+            var tag = NbtConvert.ToNbt(obj);
+            var newObj = NbtConvert.FromNbt<FlatObject>(tag);
+
+            Assert.AreEqual(obj, newObj);
         }
 
         [Test]

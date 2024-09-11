@@ -109,34 +109,40 @@ namespace fNbt.Serialization {
                         continue;
                     }
 
-                    var atr = property.GetCustomAttribute<NbtPropertyAttribute>();
+                    var flatAtr = property.GetCustomAttribute<NbtFlatPropertyAttribute>();
+                    var atr = flatAtr ?? property.GetCustomAttribute<NbtPropertyAttribute>();
                     if (settings.NbtPropertyHandling == Handlings.NbtPropertyHandling.MarkedOnly 
                         && atr == null
                         && type.GetCustomAttribute<NbtObjectAttribute>() == null) {
                         continue;
                     }
 
-                    var name = atr?.Name;
+                    var namingStrategy = settings.NamingStrategy ?? NbtSerializerSettings.DefaultSettings.NamingStrategy;
+                    var propertyCache = Describe(property.PropertyType, settings, atr);
 
-                    if (name == null) {
-                        name = (settings.NamingStrategy ?? NbtSerializerSettings.DefaultSettings.NamingStrategy).ResolvePropertyName(property.Name);
+                    if (flatAtr == null || propertyCache.Converter != null) {
+                        var name = atr?.Name
+                        ?? namingStrategy.ResolvePropertyName(property.Name);
+
+                        cache.Properties.Add(name, CreateProperty(property, propertyCache, name, settings));
+                    } else {
+                        var flatNamingStrategy = flatAtr.NamingStrategy ?? namingStrategy;
+
+                        foreach (var flatProperty in propertyCache.Properties) {
+                            var flatNbtProperty = (NbtSerializationProperty)flatProperty.Value.Clone();
+                            flatNbtProperty.Name = flatNamingStrategy.ResolvePropertyName(flatNbtProperty.Origin.Name);
+
+                            var flatCache = new NbtSerializationCache() {
+                                Type = propertyCache.Type,
+                                Settings = propertyCache.Settings,
+                                Converter = new FlatPropertyConverter() {
+                                    Property = flatProperty.Value
+                                }
+                            };
+
+                            cache.Properties.Add(flatNbtProperty.Name, CreateProperty(property, flatCache, flatNbtProperty.Name, settings));
+                        }
                     }
-
-                    var nbtProperty = new NbtSerializationProperty() {
-                        Type = property.PropertyType,
-                        Name = name,
-                        SerializationCache = Describe(property.PropertyType, settings, atr),
-                        Settings = settings
-                    };
-
-                    if (property.GetMethod != null) {
-                        nbtProperty.Get = property.GetMethod.Invoke;
-                    }
-                    if (property.SetMethod != null) {
-                        nbtProperty.Set = property.SetMethod.Invoke;
-                    }
-
-                    cache.Properties.Add(name, nbtProperty);
                 }
             } catch {
                 // remove bad cache
@@ -145,6 +151,25 @@ namespace fNbt.Serialization {
             }
 
             return cache;
+        }
+
+        private static NbtSerializationProperty CreateProperty(PropertyInfo propertyInfo, NbtSerializationCache cache, string name, NbtSerializerSettings settings) {
+            var nbtProperty = new NbtSerializationProperty() {
+                Type = propertyInfo.PropertyType,
+                Name = name,
+                Origin = propertyInfo,
+                SerializationCache = cache,
+                Settings = settings
+            };
+
+            if (propertyInfo.GetMethod != null) {
+                nbtProperty.Get = propertyInfo.GetMethod.Invoke;
+            }
+            if (propertyInfo.SetMethod != null) {
+                nbtProperty.Set = propertyInfo.SetMethod.Invoke;
+            }
+
+            return nbtProperty;
         }
     }
 }
