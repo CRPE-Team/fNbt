@@ -127,7 +127,8 @@ namespace fNbt.Serialization {
 
                     var flatAtr = member.GetCustomAttribute<NbtFlatPropertyAttribute>();
                     var atr = flatAtr ?? member.GetCustomAttribute<NbtPropertyAttribute>();
-                    if (settings.NbtMemberHandling == Handlings.NbtMemberHandling.MarkedOnly 
+                    if (settings.NbtMemberHandling == Handlings.NbtMemberHandling.MarkedOnly
+                        && attribute == null
                         && atr == null
                         && type.GetCustomAttribute<NbtObjectAttribute>() == null) {
                         continue;
