@@ -31,9 +31,13 @@ namespace fNbt.Serialization.Converters {
             ElementSerializationCache.Settings = settings;
 
             var listType = stream.ReadTagType();
-
             var length = stream.ReadInt32();
-            var array = Array.CreateInstance(type.GetElementType(), length);
+
+            var existingArray = value as Array;
+            var array = existingArray != null && existingArray.Length == length 
+                ? existingArray 
+                : Array.CreateInstance(type.GetElementType(), length);
+
             for (var i = 0; i < length; i++) {
                 var k = i;
                 array.SetValue(ReadItem(stream, ref k, settings), k);
@@ -65,7 +69,11 @@ namespace fNbt.Serialization.Converters {
             ElementSerializationCache.Settings = settings;
 
             var nbtList = tag as NbtList;
-            var array = Array.CreateInstance(type.GetElementType(), nbtList.Count);
+
+            var existingArray = value as Array;
+            var array = existingArray != null && existingArray.Length == nbtList.Count 
+                ? existingArray 
+                : Array.CreateInstance(type.GetElementType(), nbtList.Count);
 
             for (var i = 0; i < nbtList.Count; i++) {
                 var k = i;
