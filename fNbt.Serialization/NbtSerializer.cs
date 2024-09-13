@@ -23,7 +23,11 @@ namespace fNbt.Serialization {
         }
 
         public static object Read(object value, Stream stream, NbtSerializerSettings settings = null) {
-            return ReadInternal(value.GetType(), new NbtBinaryReader(stream, settings?.Flavor ?? NbtSerializerSettings.DefaultSettings.Flavor), value, null, settings);
+            return Read(value, new NbtBinaryReader(stream, settings?.Flavor ?? NbtSerializerSettings.DefaultSettings.Flavor), settings);
+        }
+
+        public static object Read(object value, NbtBinaryReader stream, NbtSerializerSettings settings = null) {
+            return ReadInternal(value.GetType(), stream, value, null, settings);
         }
 
         public static void Write(object value, Stream stream, NbtSerializerSettings settings = null) {
