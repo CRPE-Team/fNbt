@@ -147,7 +147,7 @@ namespace fNbt.Serialization {
 
                         foreach (var flatMember in memberCache.Members) {
                             var flatNbtMember = (INbtSerializationMember)flatMember.Value.Clone();
-                            flatNbtMember.Name = flatNamingStrategy.ResolveMemberName(flatNbtMember.Origin.Name);
+                            flatNbtMember.Name = flatNamingStrategy.ResolveMemberName(flatNbtMember.Name);
 
                             var flatCache = new NbtSerializationCache() {
                                 Type = memberCache.Type,
