@@ -7,15 +7,23 @@ namespace fNbt.Serialization {
         internal static DynamicNbtConverter DynamicNbtConverter { get; } = new DynamicNbtConverter();
 
         public static T Read<T>(Stream stream, NbtSerializerSettings settings = null) {
-            return Read<T>(new NbtBinaryReader(stream, settings?.Flavor ?? NbtSerializerSettings.DefaultSettings.Flavor), settings);
+            return (T)Read(typeof(T), stream, settings);
         }
 
         public static T Read<T>(NbtBinaryReader stream, NbtSerializerSettings settings = null) {
             return (T)Read(typeof(T), stream, settings);
         }
 
+        public static object Read(Type type, Stream stream, NbtSerializerSettings settings = null) {
+            return ReadInternal(type, new NbtBinaryReader(stream, settings?.Flavor ?? NbtSerializerSettings.DefaultSettings.Flavor), null, null, settings);
+        }
+
         public static object Read(Type type, NbtBinaryReader stream, NbtSerializerSettings settings = null) {
             return ReadInternal(type, stream, null, null, settings);
+        }
+
+        public static object Read(object value, Stream stream, NbtSerializerSettings settings = null) {
+            return ReadInternal(value.GetType(), new NbtBinaryReader(stream, settings?.Flavor ?? NbtSerializerSettings.DefaultSettings.Flavor), value, null, settings);
         }
 
         public static void Write(object value, Stream stream, NbtSerializerSettings settings = null) {
@@ -24,6 +32,14 @@ namespace fNbt.Serialization {
 
         public static void Write(object value, NbtBinaryWriter stream, NbtSerializerSettings settings = null) {
             WriteInternal(value, stream, string.Empty, settings);
+        }
+
+        public static void WriteData(object value, Stream stream, NbtSerializerSettings settings = null) {
+            WriteDataInternal(value, new NbtBinaryWriter(stream, settings?.Flavor ?? NbtSerializerSettings.DefaultSettings.Flavor), settings);
+        }
+
+        public static void WriteData(object value, NbtBinaryWriter stream, NbtSerializerSettings settings = null) {
+            WriteDataInternal(value, stream, settings);
         }
 
         internal static NbtTagType GetTagTypeInternal(Type type, NbtSerializerSettings settings) {

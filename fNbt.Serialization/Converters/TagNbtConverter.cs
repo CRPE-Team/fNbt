@@ -11,7 +11,8 @@ namespace fNbt.Serialization.Converters {
         }
 
         public override object Read(NbtBinaryReader stream, Type type, object value, string name, NbtSerializerSettings settings) {
-            return ((NbtTag)Activator.CreateInstance(type)).ReadTag(stream);
+            var tag = (NbtTag)Activator.CreateInstance(type);
+            return tag.ReadTag(stream) ? tag : null;
         }
 
         public override void Write(NbtBinaryWriter stream, object value, string name, NbtSerializerSettings settings) {
