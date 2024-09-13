@@ -26,7 +26,6 @@ namespace fNbt.Serialization {
             }
 
             var value = Get(obj, []);
-            value = SerializationCache.Read(stream, value, Name);
 
             if (Set == null && value == null) {
                 if (Settings.PropertySetHandling == Handlings.PropertySetHandling.Error) {
@@ -35,7 +34,11 @@ namespace fNbt.Serialization {
                 return;
             }
 
-            Set(obj, [value]);
+            value = SerializationCache.Read(stream, value, Name);
+
+            if (Set != null) {
+                Set(obj, [value]);
+            }
         }
 
         public void Write(object obj, NbtBinaryWriter stream) {
@@ -57,9 +60,8 @@ namespace fNbt.Serialization {
             }
 
             var value = Get(obj, []);
-            value = SerializationCache.FromNbt(tag, value);
 
-            if (Set == null) {
+            if (Set == null && value == null) {
                 if (Settings.PropertySetHandling == Handlings.PropertySetHandling.Error) {
                     throw new NbtSerializationException($"set method of property [{Type}.{Name}] is not implemented");
                 }
@@ -67,7 +69,11 @@ namespace fNbt.Serialization {
                 return;
             }
 
-            Set(obj, [value]);
+            value = SerializationCache.FromNbt(tag, value);
+
+            if (Set != null) {
+                Set(obj, [value]);
+            }
         }
 
         public NbtTag ToNbt(object obj) {
