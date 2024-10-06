@@ -6,13 +6,13 @@ namespace fNbt {
     /// <summary> Represents a complete NBT file. </summary>
     public sealed class NbtFile {
         // Size of buffers that are used to avoid frequent reads from / writes to compressed streams
-        const int WriteBufferSize = 8 * 1024;
+        internal const int WriteBufferSize = 8 * 1024;
 
         // Size of buffers used for reading to/from files
-        const int FileStreamBufferSize = 64 * 1024;
+        internal const int FileStreamBufferSize = 64 * 1024;
 
         // First byte of a valid ZLib stream
-        const int ZLibMagicNumber = 0x78;
+        internal const int ZLibMagicNumber = 0x78;
 
         /// <summary> Gets the file name used for most recent loading/saving of this file.
         /// May be <c>null</c>, if this <c>NbtFile</c> instance has not been loaded from, or saved to, a file. </summary>
@@ -358,7 +358,7 @@ namespace fNbt {
         }
 
 
-        static NbtCompression DetectCompression(Stream stream) {
+        internal static NbtCompression DetectCompression(Stream stream) {
             NbtCompression compression;
             if (!stream.CanSeek) {
                 throw new NotSupportedException("Cannot auto-detect compression on a stream that's not seekable.");
